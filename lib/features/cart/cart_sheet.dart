@@ -19,7 +19,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
 
   Future<void> _submitOrder() async {
     final cart = ref.read(cartProvider);
-    if (cart.items.isEmpty || cart.tableId == null || cart.tenantId == null) return;
+    if (cart.isEmpty || cart.tableId == null || cart.tenantId == null) return;
 
     setState(() => _isSubmitting = true);
 
@@ -43,18 +43,42 @@ class _CartSheetState extends ConsumerState<CartSheet> {
 
       final createdOrder = Order.fromJson(orderResponse);
 
-      // Create order items
-      final orderItems = cart.items.map((cartItem) => {
-        'order_id': createdOrder.id,
-        'menu_item_id': cartItem.menuItem.id,
-        'menu_item_name': cartItem.menuItem.name,
-        'unit_price': cartItem.menuItem.price,
-        'quantity': cartItem.quantity,
-        'notes': cartItem.notes,
-        'status': 'pending',
-      }).toList();
+      // Create order items (regular + fixed menus)
+      final orderItems = <Map<String, dynamic>>[];
 
-      await client.from('order_items').insert(orderItems);
+      // Regular items
+      for (final cartItem in cart.items) {
+        orderItems.add({
+          'order_id': createdOrder.id,
+          'menu_item_id': cartItem.menuItem.id,
+          'menu_item_name': cartItem.menuItem.name,
+          'unit_price': cartItem.menuItem.price,
+          'quantity': cartItem.quantity,
+          'notes': cartItem.notes,
+          'status': 'pending',
+        });
+      }
+
+      // Fixed menu items (menu_item_id is null, fixed_menu_id is set)
+      for (final fixedItem in cart.fixedMenuItems) {
+        final selectionSummary = fixedItem.selection.selections.values
+            .map((s) => s.choiceName)
+            .join(', ');
+        orderItems.add({
+          'order_id': createdOrder.id,
+          'menu_item_name': fixedItem.selection.fixedMenuName,
+          'unit_price': fixedItem.selection.totalPrice,
+          'quantity': fixedItem.quantity,
+          'notes': fixedItem.notes ?? selectionSummary,
+          'status': 'pending',
+          'fixed_menu_id': fixedItem.selection.fixedMenuId,
+          'fixed_menu_selections': fixedItem.selection.toJson(),
+        });
+      }
+
+      if (orderItems.isNotEmpty) {
+        await client.from('order_items').insert(orderItems);
+      }
 
       // Clear cart
       ref.read(cartProvider.notifier).clear();
@@ -178,15 +202,27 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                     : ListView.builder(
                         controller: scrollController,
                         padding: const EdgeInsets.all(AppSpacing.md),
-                        itemCount: cart.items.length + 1, // +1 for name field
+                        itemCount: cart.items.length +
+                            cart.fixedMenuItems.length +
+                            1, // +1 for name field
                         itemBuilder: (context, index) {
-                          if (index == cart.items.length) {
-                            return _buildCustomerNameField();
+                          // Regular items first
+                          if (index < cart.items.length) {
+                            return _CartItemTile(
+                              item: cart.items[index],
+                              index: index,
+                            );
                           }
-                          return _CartItemTile(
-                            item: cart.items[index],
-                            index: index,
-                          );
+                          // Then fixed menu items
+                          final fixedIndex = index - cart.items.length;
+                          if (fixedIndex < cart.fixedMenuItems.length) {
+                            return _FixedMenuCartItemTile(
+                              item: cart.fixedMenuItems[fixedIndex],
+                              index: fixedIndex,
+                            );
+                          }
+                          // Last: name field
+                          return _buildCustomerNameField();
                         },
                       ),
               ),
@@ -417,6 +453,111 @@ class _CartItemTile extends ConsumerWidget {
                     ref
                         .read(cartProvider.notifier)
                         .updateQuantity(index, item.quantity + 1);
+                  },
+                  visualDensity: VisualDensity.compact,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FixedMenuCartItemTile extends ConsumerWidget {
+  final FixedMenuCartItem item;
+  final int index;
+
+  const _FixedMenuCartItemTile({
+    required this.item,
+    required this.index,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Row(
+          children: [
+            // Icon for fixed menu
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              child: Container(
+                width: 60,
+                height: 60,
+                color: AppColors.burgundy.withValues(alpha: 0.1),
+                child: const Icon(
+                  Icons.restaurant_menu,
+                  color: AppColors.burgundy,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.selection.fixedMenuName,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  if (item.notes != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      item.notes!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontStyle: FontStyle.italic,
+                            color: AppColors.textSecondary,
+                          ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    item.formatTotalPrice(),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            // Quantity controls
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.remove_circle_outline),
+                  onPressed: () {
+                    if (item.quantity > 1) {
+                      ref
+                          .read(cartProvider.notifier)
+                          .updateFixedMenuQuantity(index, item.quantity - 1);
+                    } else {
+                      ref.read(cartProvider.notifier).removeFixedMenu(index);
+                    }
+                  },
+                  visualDensity: VisualDensity.compact,
+                  color: AppColors.textSecondary,
+                ),
+                Text(
+                  '${item.quantity}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add_circle_outline),
+                  onPressed: () {
+                    ref
+                        .read(cartProvider.notifier)
+                        .updateFixedMenuQuantity(index, item.quantity + 1);
                   },
                   visualDensity: VisualDensity.compact,
                   color: Theme.of(context).colorScheme.primary,

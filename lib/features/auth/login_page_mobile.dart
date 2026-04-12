@@ -36,10 +36,18 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
     });
 
     try {
-      await Supabase.instance.client.auth.signInWithPassword(
+      final response = await Supabase.instance.client.auth.signInWithPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+
+      // Update last_login_at in users table
+      if (response.user != null) {
+        await Supabase.instance.client
+            .from('users')
+            .update({'last_login_at': DateTime.now().toIso8601String()})
+            .eq('id', response.user!.id);
+      }
 
       if (mounted) {
         context.go('/');

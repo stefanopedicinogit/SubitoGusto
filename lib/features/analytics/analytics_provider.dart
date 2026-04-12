@@ -180,20 +180,21 @@ final analyticsDataProvider = FutureProvider<AnalyticsData>((ref) async {
     allOrderItems.addAll(items);
   }
 
-  // Top selling items
+  // Top selling items (use menuItemId for regular items, fixedMenuId for fixed menus)
   final itemSales = <String, TopSellingItem>{};
   for (final item in allOrderItems) {
-    final existing = itemSales[item.menuItemId];
+    final itemKey = item.menuItemId ?? item.fixedMenuId ?? item.id;
+    final existing = itemSales[itemKey];
     if (existing != null) {
-      itemSales[item.menuItemId] = TopSellingItem(
-        menuItemId: item.menuItemId,
+      itemSales[itemKey] = TopSellingItem(
+        menuItemId: itemKey,
         name: item.menuItemName,
         quantity: existing.quantity + item.quantity,
         revenue: existing.revenue + (item.unitPrice * item.quantity),
       );
     } else {
-      itemSales[item.menuItemId] = TopSellingItem(
-        menuItemId: item.menuItemId,
+      itemSales[itemKey] = TopSellingItem(
+        menuItemId: itemKey,
         name: item.menuItemName,
         quantity: item.quantity,
         revenue: item.unitPrice * item.quantity,
@@ -209,6 +210,7 @@ final analyticsDataProvider = FutureProvider<AnalyticsData>((ref) async {
   final categoriesMap = {for (final c in categoriesAsync) c.id: c};
 
   for (final item in allOrderItems) {
+    if (item.menuItemId == null) continue; // Skip fixed menu items for category stats
     final menuItem = menuItemsMap[item.menuItemId];
     if (menuItem == null) continue;
 

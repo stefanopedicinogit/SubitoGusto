@@ -66,8 +66,11 @@ class _FixedMenuSelectionSheetState
     }
     final totalPrice = widget.menu.price + totalSupplements;
 
-    // Check if all required courses have selections
-    final allRequiredSelected = fullMenu.requiredCourses.every((course) {
+    // Check if all required courses (that have available choices) have selections
+    final selectableRequiredCourses = fullMenu.requiredCourses
+        .where((c) => c.availableChoices.isNotEmpty)
+        .toList();
+    final allRequiredSelected = selectableRequiredCourses.every((course) {
       return _selections[course.course.id] != null;
     });
 
@@ -268,9 +271,11 @@ class _FixedMenuSelectionSheetState
           selectionDetails.join('\n'),
         );
 
+    // Capture scaffold messenger before popping (context may deactivate after pop)
+    final messenger = ScaffoldMessenger.of(context);
     Navigator.of(context).pop();
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(
         content: Text('${widget.menu.name} aggiunto al carrello'),
         backgroundColor: AppColors.success,
@@ -368,6 +373,18 @@ class _CourseSelectionSection extends StatelessWidget {
             ),
           const SizedBox(height: AppSpacing.sm),
           // Choices
+          if (choices.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Text(
+                'Nessuna scelta disponibile per questa portata',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontStyle: FontStyle.italic,
+                  fontSize: 13,
+                ),
+              ),
+            ),
           ...choices.map((choice) {
             final isSelected = selectedChoice?.id == choice.id;
 

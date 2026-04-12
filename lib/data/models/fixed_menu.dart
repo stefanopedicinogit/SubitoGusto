@@ -60,11 +60,13 @@ class FixedMenu with _$FixedMenu {
   bool isAvailableNow() {
     if (!isAvailableToday) return false;
 
+    // Menus available for 'all' are always shown when active and valid
+    if (availableFor == 'all') return true;
+
     final hour = DateTime.now().hour;
     final isLunchTime = hour >= 11 && hour < 15;
     final isDinnerTime = hour >= 18 && hour < 23;
 
-    if (availableFor == 'all') return isLunchTime || isDinnerTime;
     if (availableFor == 'lunch') return isLunchTime;
     if (availableFor == 'dinner') return isDinnerTime;
     return true;

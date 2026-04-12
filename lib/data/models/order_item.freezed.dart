@@ -25,7 +25,7 @@ mixin _$OrderItem {
   @JsonKey(name: 'order_id')
   String get orderId => throw _privateConstructorUsedError;
   @JsonKey(name: 'menu_item_id')
-  String get menuItemId => throw _privateConstructorUsedError;
+  String? get menuItemId => throw _privateConstructorUsedError;
   @JsonKey(name: 'menu_item_name')
   String get menuItemName => throw _privateConstructorUsedError;
   @JsonKey(name: 'unit_price')
@@ -33,6 +33,11 @@ mixin _$OrderItem {
   int get quantity => throw _privateConstructorUsedError;
   String? get notes => throw _privateConstructorUsedError;
   String get status => throw _privateConstructorUsedError;
+  @JsonKey(name: 'fixed_menu_id')
+  String? get fixedMenuId => throw _privateConstructorUsedError;
+  @JsonKey(name: 'fixed_menu_selections')
+  Map<String, dynamic>? get fixedMenuSelections =>
+      throw _privateConstructorUsedError;
   @JsonKey(name: 'created_at')
   DateTime get createdAt => throw _privateConstructorUsedError;
   @JsonKey(name: 'updated_at')
@@ -56,12 +61,15 @@ abstract class $OrderItemCopyWith<$Res> {
   $Res call({
     String id,
     @JsonKey(name: 'order_id') String orderId,
-    @JsonKey(name: 'menu_item_id') String menuItemId,
+    @JsonKey(name: 'menu_item_id') String? menuItemId,
     @JsonKey(name: 'menu_item_name') String menuItemName,
     @JsonKey(name: 'unit_price') double unitPrice,
     int quantity,
     String? notes,
     String status,
+    @JsonKey(name: 'fixed_menu_id') String? fixedMenuId,
+    @JsonKey(name: 'fixed_menu_selections')
+    Map<String, dynamic>? fixedMenuSelections,
     @JsonKey(name: 'created_at') DateTime createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
   });
@@ -84,12 +92,14 @@ class _$OrderItemCopyWithImpl<$Res, $Val extends OrderItem>
   $Res call({
     Object? id = null,
     Object? orderId = null,
-    Object? menuItemId = null,
+    Object? menuItemId = freezed,
     Object? menuItemName = null,
     Object? unitPrice = null,
     Object? quantity = null,
     Object? notes = freezed,
     Object? status = null,
+    Object? fixedMenuId = freezed,
+    Object? fixedMenuSelections = freezed,
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
@@ -103,10 +113,10 @@ class _$OrderItemCopyWithImpl<$Res, $Val extends OrderItem>
                 ? _value.orderId
                 : orderId // ignore: cast_nullable_to_non_nullable
                       as String,
-            menuItemId: null == menuItemId
+            menuItemId: freezed == menuItemId
                 ? _value.menuItemId
                 : menuItemId // ignore: cast_nullable_to_non_nullable
-                      as String,
+                      as String?,
             menuItemName: null == menuItemName
                 ? _value.menuItemName
                 : menuItemName // ignore: cast_nullable_to_non_nullable
@@ -127,6 +137,14 @@ class _$OrderItemCopyWithImpl<$Res, $Val extends OrderItem>
                 ? _value.status
                 : status // ignore: cast_nullable_to_non_nullable
                       as String,
+            fixedMenuId: freezed == fixedMenuId
+                ? _value.fixedMenuId
+                : fixedMenuId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            fixedMenuSelections: freezed == fixedMenuSelections
+                ? _value.fixedMenuSelections
+                : fixedMenuSelections // ignore: cast_nullable_to_non_nullable
+                      as Map<String, dynamic>?,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -153,12 +171,15 @@ abstract class _$$OrderItemImplCopyWith<$Res>
   $Res call({
     String id,
     @JsonKey(name: 'order_id') String orderId,
-    @JsonKey(name: 'menu_item_id') String menuItemId,
+    @JsonKey(name: 'menu_item_id') String? menuItemId,
     @JsonKey(name: 'menu_item_name') String menuItemName,
     @JsonKey(name: 'unit_price') double unitPrice,
     int quantity,
     String? notes,
     String status,
+    @JsonKey(name: 'fixed_menu_id') String? fixedMenuId,
+    @JsonKey(name: 'fixed_menu_selections')
+    Map<String, dynamic>? fixedMenuSelections,
     @JsonKey(name: 'created_at') DateTime createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
   });
@@ -180,12 +201,14 @@ class __$$OrderItemImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? orderId = null,
-    Object? menuItemId = null,
+    Object? menuItemId = freezed,
     Object? menuItemName = null,
     Object? unitPrice = null,
     Object? quantity = null,
     Object? notes = freezed,
     Object? status = null,
+    Object? fixedMenuId = freezed,
+    Object? fixedMenuSelections = freezed,
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
@@ -199,10 +222,10 @@ class __$$OrderItemImplCopyWithImpl<$Res>
             ? _value.orderId
             : orderId // ignore: cast_nullable_to_non_nullable
                   as String,
-        menuItemId: null == menuItemId
+        menuItemId: freezed == menuItemId
             ? _value.menuItemId
             : menuItemId // ignore: cast_nullable_to_non_nullable
-                  as String,
+                  as String?,
         menuItemName: null == menuItemName
             ? _value.menuItemName
             : menuItemName // ignore: cast_nullable_to_non_nullable
@@ -223,6 +246,14 @@ class __$$OrderItemImplCopyWithImpl<$Res>
             ? _value.status
             : status // ignore: cast_nullable_to_non_nullable
                   as String,
+        fixedMenuId: freezed == fixedMenuId
+            ? _value.fixedMenuId
+            : fixedMenuId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        fixedMenuSelections: freezed == fixedMenuSelections
+            ? _value._fixedMenuSelections
+            : fixedMenuSelections // ignore: cast_nullable_to_non_nullable
+                  as Map<String, dynamic>?,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -242,15 +273,19 @@ class _$OrderItemImpl extends _OrderItem {
   const _$OrderItemImpl({
     required this.id,
     @JsonKey(name: 'order_id') required this.orderId,
-    @JsonKey(name: 'menu_item_id') required this.menuItemId,
+    @JsonKey(name: 'menu_item_id') this.menuItemId,
     @JsonKey(name: 'menu_item_name') required this.menuItemName,
     @JsonKey(name: 'unit_price') required this.unitPrice,
     this.quantity = 1,
     this.notes,
     this.status = 'pending',
+    @JsonKey(name: 'fixed_menu_id') this.fixedMenuId,
+    @JsonKey(name: 'fixed_menu_selections')
+    final Map<String, dynamic>? fixedMenuSelections,
     @JsonKey(name: 'created_at') required this.createdAt,
     @JsonKey(name: 'updated_at') this.updatedAt,
-  }) : super._();
+  }) : _fixedMenuSelections = fixedMenuSelections,
+       super._();
 
   factory _$OrderItemImpl.fromJson(Map<String, dynamic> json) =>
       _$$OrderItemImplFromJson(json);
@@ -262,7 +297,7 @@ class _$OrderItemImpl extends _OrderItem {
   final String orderId;
   @override
   @JsonKey(name: 'menu_item_id')
-  final String menuItemId;
+  final String? menuItemId;
   @override
   @JsonKey(name: 'menu_item_name')
   final String menuItemName;
@@ -278,6 +313,21 @@ class _$OrderItemImpl extends _OrderItem {
   @JsonKey()
   final String status;
   @override
+  @JsonKey(name: 'fixed_menu_id')
+  final String? fixedMenuId;
+  final Map<String, dynamic>? _fixedMenuSelections;
+  @override
+  @JsonKey(name: 'fixed_menu_selections')
+  Map<String, dynamic>? get fixedMenuSelections {
+    final value = _fixedMenuSelections;
+    if (value == null) return null;
+    if (_fixedMenuSelections is EqualUnmodifiableMapView)
+      return _fixedMenuSelections;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(value);
+  }
+
+  @override
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
   @override
@@ -286,7 +336,7 @@ class _$OrderItemImpl extends _OrderItem {
 
   @override
   String toString() {
-    return 'OrderItem(id: $id, orderId: $orderId, menuItemId: $menuItemId, menuItemName: $menuItemName, unitPrice: $unitPrice, quantity: $quantity, notes: $notes, status: $status, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'OrderItem(id: $id, orderId: $orderId, menuItemId: $menuItemId, menuItemName: $menuItemName, unitPrice: $unitPrice, quantity: $quantity, notes: $notes, status: $status, fixedMenuId: $fixedMenuId, fixedMenuSelections: $fixedMenuSelections, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -306,6 +356,12 @@ class _$OrderItemImpl extends _OrderItem {
                 other.quantity == quantity) &&
             (identical(other.notes, notes) || other.notes == notes) &&
             (identical(other.status, status) || other.status == status) &&
+            (identical(other.fixedMenuId, fixedMenuId) ||
+                other.fixedMenuId == fixedMenuId) &&
+            const DeepCollectionEquality().equals(
+              other._fixedMenuSelections,
+              _fixedMenuSelections,
+            ) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -324,6 +380,8 @@ class _$OrderItemImpl extends _OrderItem {
     quantity,
     notes,
     status,
+    fixedMenuId,
+    const DeepCollectionEquality().hash(_fixedMenuSelections),
     createdAt,
     updatedAt,
   );
@@ -346,12 +404,15 @@ abstract class _OrderItem extends OrderItem {
   const factory _OrderItem({
     required final String id,
     @JsonKey(name: 'order_id') required final String orderId,
-    @JsonKey(name: 'menu_item_id') required final String menuItemId,
+    @JsonKey(name: 'menu_item_id') final String? menuItemId,
     @JsonKey(name: 'menu_item_name') required final String menuItemName,
     @JsonKey(name: 'unit_price') required final double unitPrice,
     final int quantity,
     final String? notes,
     final String status,
+    @JsonKey(name: 'fixed_menu_id') final String? fixedMenuId,
+    @JsonKey(name: 'fixed_menu_selections')
+    final Map<String, dynamic>? fixedMenuSelections,
     @JsonKey(name: 'created_at') required final DateTime createdAt,
     @JsonKey(name: 'updated_at') final DateTime? updatedAt,
   }) = _$OrderItemImpl;
@@ -367,7 +428,7 @@ abstract class _OrderItem extends OrderItem {
   String get orderId;
   @override
   @JsonKey(name: 'menu_item_id')
-  String get menuItemId;
+  String? get menuItemId;
   @override
   @JsonKey(name: 'menu_item_name')
   String get menuItemName;
@@ -380,6 +441,12 @@ abstract class _OrderItem extends OrderItem {
   String? get notes;
   @override
   String get status;
+  @override
+  @JsonKey(name: 'fixed_menu_id')
+  String? get fixedMenuId;
+  @override
+  @JsonKey(name: 'fixed_menu_selections')
+  Map<String, dynamic>? get fixedMenuSelections;
   @override
   @JsonKey(name: 'created_at')
   DateTime get createdAt;

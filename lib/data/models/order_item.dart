@@ -10,18 +10,23 @@ class OrderItem with _$OrderItem {
   const factory OrderItem({
     required String id,
     @JsonKey(name: 'order_id') required String orderId,
-    @JsonKey(name: 'menu_item_id') required String menuItemId,
+    @JsonKey(name: 'menu_item_id') String? menuItemId,
     @JsonKey(name: 'menu_item_name') required String menuItemName,
     @JsonKey(name: 'unit_price') required double unitPrice,
     @Default(1) int quantity,
     String? notes,
     @Default('pending') String status,
+    @JsonKey(name: 'fixed_menu_id') String? fixedMenuId,
+    @JsonKey(name: 'fixed_menu_selections') Map<String, dynamic>? fixedMenuSelections,
     @JsonKey(name: 'created_at') required DateTime createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
   }) = _OrderItem;
 
   factory OrderItem.fromJson(Map<String, dynamic> json) =>
       _$OrderItemFromJson(json);
+
+  /// Whether this is a fixed menu order item
+  bool get isFixedMenu => fixedMenuId != null;
 
   /// Calculate total price for this item
   double get totalPrice => unitPrice * quantity;
