@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/menu_item.dart';
-import '../../data/models/category.dart';
 import '../../data/providers/providers.dart';
 
 /// Dialog for creating or editing a menu item

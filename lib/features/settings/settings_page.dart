@@ -5,7 +5,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/providers/settings_provider.dart';
 import '../../data/providers/providers.dart';
-import '../../data/providers/tenant_theme_provider.dart';
 
 /// Settings page for desktop
 class SettingsPage extends ConsumerWidget {
