@@ -662,6 +662,20 @@ class _BrandColorsEditorState extends ConsumerState<_BrandColorsEditor> {
   }
 
   @override
+  void didUpdateWidget(covariant _BrandColorsEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.primaryColor != widget.primaryColor) {
+      _primaryController.text = widget.primaryColor ?? '#722F37';
+    }
+    if (oldWidget.secondaryColor != widget.secondaryColor) {
+      _secondaryController.text = widget.secondaryColor ?? '#D4AF37';
+    }
+    if (oldWidget.backgroundColor != widget.backgroundColor) {
+      _backgroundController.text = widget.backgroundColor ?? '#FDF5E6';
+    }
+  }
+
+  @override
   void dispose() {
     _primaryController.dispose();
     _secondaryController.dispose();
@@ -680,7 +694,17 @@ class _BrandColorsEditorState extends ConsumerState<_BrandColorsEditor> {
   }
 
   Future<void> _saveColors() async {
-    if (widget.tenantId == null) return;
+    if (widget.tenantId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Errore: nessun ristorante associato'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
 
     setState(() => _isSaving = true);
 
@@ -701,10 +725,13 @@ class _BrandColorsEditorState extends ConsumerState<_BrandColorsEditor> {
       settings['secondary_color'] = _secondaryController.text;
       settings['background_color'] = _backgroundController.text;
 
+      // Use .select().single() to verify the update actually succeeded
       await Supabase.instance.client
           .from('tenants')
           .update({'settings': settings})
-          .eq('id', widget.tenantId!);
+          .eq('id', widget.tenantId!)
+          .select()
+          .single();
 
       // Invalidate tenant provider to refresh theme
       ref.invalidate(tenantProvider);
@@ -721,7 +748,7 @@ class _BrandColorsEditorState extends ConsumerState<_BrandColorsEditor> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore: $e'),
+            content: Text('Errore nel salvataggio: $e'),
             backgroundColor: AppColors.error,
           ),
         );
