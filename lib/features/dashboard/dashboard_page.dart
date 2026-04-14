@@ -95,6 +95,7 @@ class DashboardPage extends ConsumerWidget {
                       DropdownMenuItem(value: 'TBL004', child: Text('Tavolo 4')),
                       DropdownMenuItem(value: 'TBL005', child: Text('Tavolo 5')),
                       DropdownMenuItem(value: 'TBL006', child: Text('Tavolo 6')),
+                      DropdownMenuItem(value: 'TBLFERRARA', child: Text('Tavolo Ferrara')),
                     ],
                     onChanged: (qrCode) {
                       if (qrCode != null) {

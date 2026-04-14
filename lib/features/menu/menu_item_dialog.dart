@@ -1,6 +1,9 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 import '../../core/theme/app_theme.dart';
 import '../../data/models/menu_item.dart';
 import '../../data/providers/providers.dart';
@@ -35,6 +38,9 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
   late List<String> _selectedTags;
   late List<String> _selectedAllergens;
   bool _isLoading = false;
+  bool _isUploading = false;
+  Uint8List? _pickedImageBytes;
+  String? _pickedImageName;
 
   bool get isEditing => widget.menuItem != null;
 
@@ -98,6 +104,60 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final input = html.FileUploadInputElement()..accept = 'image/*';
+    input.click();
+
+    await input.onChange.first;
+    if (input.files == null || input.files!.isEmpty) return;
+
+    final file = input.files!.first;
+    final reader = html.FileReader();
+    reader.readAsArrayBuffer(file);
+    await reader.onLoadEnd.first;
+
+    final bytes = reader.result as Uint8List?;
+    if (bytes == null) return;
+
+    setState(() {
+      _pickedImageBytes = bytes;
+      _pickedImageName = file.name;
+    });
+  }
+
+  Future<String?> _uploadImage(String menuItemId) async {
+    if (_pickedImageBytes == null || _pickedImageName == null) return null;
+
+    setState(() => _isUploading = true);
+    try {
+      final tenantId = ref.read(currentTenantIdProvider);
+      if (tenantId == null) throw Exception('Tenant ID non configurato');
+
+      final ext = _pickedImageName!.split('.').last.toLowerCase();
+      final path = '$tenantId/menu/$menuItemId.$ext';
+
+      final contentType = switch (ext) {
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+        _ => 'image/jpeg',
+      };
+
+      await Supabase.instance.client.storage
+          .from('tenant-assets')
+          .uploadBinary(
+            path,
+            _pickedImageBytes!,
+            fileOptions: FileOptions(contentType: contentType, upsert: true),
+          );
+
+      final supabaseUrl = Supabase.instance.client.rest.url
+          .replaceAll('/rest/v1', '');
+      return '$supabaseUrl/storage/v1/object/public/tenant-assets/$path';
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_categoryId == null) {
@@ -139,15 +199,34 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
         'updated_at': DateTime.now().toIso8601String(),
       };
 
+      String itemId;
+
       if (isEditing) {
+        itemId = widget.menuItem!.id;
         await Supabase.instance.client
             .from('menu_items')
             .update(data)
-            .eq('id', widget.menuItem!.id);
+            .eq('id', itemId);
       } else {
         data['tenant_id'] = tenantId;
         data['created_at'] = DateTime.now().toIso8601String();
-        await Supabase.instance.client.from('menu_items').insert(data);
+        final result = await Supabase.instance.client
+            .from('menu_items')
+            .insert(data)
+            .select('id')
+            .single();
+        itemId = result['id'] as String;
+      }
+
+      // Upload image if one was picked
+      if (_pickedImageBytes != null) {
+        final imageUrl = await _uploadImage(itemId);
+        if (imageUrl != null) {
+          await Supabase.instance.client
+              .from('menu_items')
+              .update({'image_url': imageUrl})
+              .eq('id', itemId);
+        }
       }
 
       ref.invalidate(menuItemsProvider);
@@ -307,13 +386,17 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                             child: categoriesAsync.when(
                               data: (categories) => DropdownButtonFormField<String>(
                                 value: _categoryId,
+                                isExpanded: true,
                                 decoration: const InputDecoration(
                                   labelText: 'Categoria *',
                                 ),
                                 items: categories.map((cat) {
                                   return DropdownMenuItem(
                                     value: cat.id,
-                                    child: Text(cat.name),
+                                    child: Text(
+                                      cat.name,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   );
                                 }).toList(),
                                 onChanged: (value) =>
@@ -385,18 +468,83 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      // Image URL and Sort Order
+                      // Image upload and Sort Order
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             flex: 2,
-                            child: TextFormField(
-                              controller: _imageUrlController,
-                              decoration: const InputDecoration(
-                                labelText: 'URL Immagine',
-                                hintText: 'https://...',
-                              ),
-                              keyboardType: TextInputType.url,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Immagine',
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                ),
+                                const SizedBox(height: AppSpacing.sm),
+                                Row(
+                                  children: [
+                                    // Preview
+                                    Container(
+                                      width: 80,
+                                      height: 80,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(context).scaffoldBackgroundColor,
+                                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                                        border: Border.all(color: Colors.grey.shade300),
+                                      ),
+                                      clipBehavior: Clip.antiAlias,
+                                      child: _pickedImageBytes != null
+                                          ? Image.memory(
+                                              _pickedImageBytes!,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : _imageUrlController.text.trim().isNotEmpty
+                                              ? Image.network(
+                                                  _imageUrlController.text.trim(),
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (_, __, ___) =>
+                                                      const Icon(Icons.broken_image, color: AppColors.textSecondary),
+                                                )
+                                              : const Icon(Icons.image, color: AppColors.textSecondary),
+                                    ),
+                                    const SizedBox(width: AppSpacing.md),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        OutlinedButton.icon(
+                                          onPressed: _isUploading ? null : _pickImage,
+                                          icon: _isUploading
+                                              ? const SizedBox(
+                                                  width: 16, height: 16,
+                                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                                )
+                                              : const Icon(Icons.upload, size: 18),
+                                          label: Text(_pickedImageBytes != null ? 'Cambia foto' : 'Carica foto'),
+                                        ),
+                                        if (_pickedImageBytes != null) ...[
+                                          const SizedBox(height: AppSpacing.xs),
+                                          Text(
+                                            _pickedImageName ?? '',
+                                            style: Theme.of(context).textTheme.bodySmall,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                        if (_imageUrlController.text.trim().isNotEmpty && _pickedImageBytes == null) ...[
+                                          const SizedBox(height: AppSpacing.xs),
+                                          TextButton.icon(
+                                            onPressed: () {
+                                              setState(() => _imageUrlController.clear());
+                                            },
+                                            icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
+                                            label: const Text('Rimuovi', style: TextStyle(color: AppColors.error, fontSize: 12)),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(width: AppSpacing.md),

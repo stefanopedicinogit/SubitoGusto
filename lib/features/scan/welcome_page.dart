@@ -7,7 +7,9 @@ import '../../data/models/table.dart';
 import '../../data/providers/providers.dart';
 import '../cart/cart_provider.dart';
 
-/// Welcome page shown after scanning QR code
+/// Default welcome page shown after scanning QR code.
+/// Tenant-specific welcome pages live in their own subfolder
+/// (e.g. tenant_ferrara/welcome_page_ferrara.dart).
 class WelcomePage extends ConsumerStatefulWidget {
   final RestaurantTable table;
 

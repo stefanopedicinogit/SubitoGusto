@@ -1,14 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/models/table.dart';
 import '../../data/providers/providers.dart';
 import 'welcome_page.dart';
+import 'tenant_ferrara/welcome_page_ferrara.dart';
 
 /// Page shown after customer scans QR code - loads table and shows welcome
 class ScanPage extends ConsumerWidget {
   final String qrCode;
 
   const ScanPage({super.key, required this.qrCode});
+
+  /// Routes to the correct tenant welcome page based on qrCode.
+  /// Add new tenant entries here as they are created.
+  static Widget _resolveWelcomePage(RestaurantTable table) {
+    switch (table.qrCode) {
+      case 'TBLFERRARA':
+        return WelcomePageFerrara(table: table);
+      default:
+        return WelcomePage(table: table);
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,7 +38,7 @@ class ScanPage extends ConsumerWidget {
             );
           }
 
-          return WelcomePage(table: table);
+          return _resolveWelcomePage(table);
         },
         loading: () => const Center(
           child: Column(

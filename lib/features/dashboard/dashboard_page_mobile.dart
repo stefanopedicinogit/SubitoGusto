@@ -259,7 +259,7 @@ class DashboardPageMobile extends ConsumerWidget {
   }
 
   void _showTableSelector(BuildContext context) {
-    final tables = ['TBL001', 'TBL002', 'TBL003', 'TBL004', 'TBL005', 'TBL006'];
+    final tables = ['TBL001', 'TBL002', 'TBL003', 'TBL004', 'TBL005', 'TBL006', 'TBLFERRARA'];
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -288,9 +288,10 @@ class DashboardPageMobile extends ConsumerWidget {
                   itemCount: tables.length,
                   itemBuilder: (context, index) {
                     final qrCode = tables[index];
+                    final tableName = qrCode == 'TBLFERRARA' ? 'Tavolo Ferrara' : 'Tavolo ${index + 1}';
                     return ListTile(
                       leading: const Icon(Icons.table_restaurant),
-                      title: Text('Tavolo ${index + 1}'),
+                      title: Text(tableName),
                       subtitle: Text('QR: $qrCode'),
                       onTap: () {
                         Navigator.pop(context);
