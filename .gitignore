@@ -121,3 +121,4 @@ app.*.symbols
 .env
 claude_cloud.ps1
 CLAUDE.md
+.vercel
