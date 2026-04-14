@@ -135,6 +135,32 @@ class SettingsPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
+                // Delivery Section
+                _SectionCard(
+                  title: 'Consegne',
+                  icon: Icons.delivery_dining,
+                  child: tenantAsync.when(
+                    data: (tenant) => _DeliverySettingsEditor(
+                      deliveryEnabled: tenant?.deliveryEnabled ?? false,
+                      deliveryFee: tenant?.deliveryFee ?? 0,
+                      deliveryRadiusKm: tenant?.deliveryRadiusKm ?? 5,
+                      deliveryMinOrder: tenant?.deliveryMinOrder ?? 0,
+                      deliveryEstimatedTimeMin: tenant?.deliveryEstimatedTimeMin ?? 30,
+                      stripeAccountId: tenant?.stripeAccountId,
+                      tenantId: tenant?.id,
+                    ),
+                    loading: () => const Padding(
+                      padding: EdgeInsets.all(AppSpacing.lg),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    error: (_, __) => const Padding(
+                      padding: EdgeInsets.all(AppSpacing.lg),
+                      child: Text('Errore nel caricamento'),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
                 // Theme Section
                 _SectionCard(
                   title: 'Aspetto',
@@ -991,5 +1017,344 @@ class _ColorPickerRow extends StatelessWidget {
   bool _isLightColor(Color? color) {
     if (color == null) return true;
     return color.computeLuminance() > 0.5;
+  }
+}
+
+class _DeliverySettingsEditor extends ConsumerStatefulWidget {
+  final bool deliveryEnabled;
+  final double deliveryFee;
+  final double deliveryRadiusKm;
+  final double deliveryMinOrder;
+  final int deliveryEstimatedTimeMin;
+  final String? stripeAccountId;
+  final String? tenantId;
+
+  const _DeliverySettingsEditor({
+    required this.deliveryEnabled,
+    required this.deliveryFee,
+    required this.deliveryRadiusKm,
+    required this.deliveryMinOrder,
+    required this.deliveryEstimatedTimeMin,
+    this.stripeAccountId,
+    this.tenantId,
+  });
+
+  @override
+  ConsumerState<_DeliverySettingsEditor> createState() =>
+      _DeliverySettingsEditorState();
+}
+
+class _DeliverySettingsEditorState
+    extends ConsumerState<_DeliverySettingsEditor> {
+  late bool _enabled;
+  late TextEditingController _feeController;
+  late TextEditingController _radiusController;
+  late TextEditingController _minOrderController;
+  late TextEditingController _timeController;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _enabled = widget.deliveryEnabled;
+    _feeController =
+        TextEditingController(text: widget.deliveryFee.toStringAsFixed(2));
+    _radiusController =
+        TextEditingController(text: widget.deliveryRadiusKm.toStringAsFixed(1));
+    _minOrderController =
+        TextEditingController(text: widget.deliveryMinOrder.toStringAsFixed(2));
+    _timeController =
+        TextEditingController(text: widget.deliveryEstimatedTimeMin.toString());
+  }
+
+  @override
+  void didUpdateWidget(covariant _DeliverySettingsEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.deliveryEnabled != widget.deliveryEnabled) {
+      _enabled = widget.deliveryEnabled;
+    }
+    if (oldWidget.deliveryFee != widget.deliveryFee) {
+      _feeController.text = widget.deliveryFee.toStringAsFixed(2);
+    }
+    if (oldWidget.deliveryRadiusKm != widget.deliveryRadiusKm) {
+      _radiusController.text = widget.deliveryRadiusKm.toStringAsFixed(1);
+    }
+    if (oldWidget.deliveryMinOrder != widget.deliveryMinOrder) {
+      _minOrderController.text = widget.deliveryMinOrder.toStringAsFixed(2);
+    }
+    if (oldWidget.deliveryEstimatedTimeMin != widget.deliveryEstimatedTimeMin) {
+      _timeController.text = widget.deliveryEstimatedTimeMin.toString();
+    }
+  }
+
+  @override
+  void dispose() {
+    _feeController.dispose();
+    _radiusController.dispose();
+    _minOrderController.dispose();
+    _timeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _startStripeOnboarding() async {
+    try {
+      final response = await Supabase.instance.client.functions.invoke(
+        'stripe-connect-onboard',
+        body: {
+          'returnUrl': Uri.base.toString(),
+        },
+      );
+      final data = response.data as Map<String, dynamic>;
+      if (data['error'] != null) {
+        throw Exception(data['error']);
+      }
+      final url = data['url'] as String;
+      // Open Stripe onboarding in a new tab/window
+      // ignore: avoid_print
+      print('Stripe onboarding URL: $url');
+      // Use url_launcher or just show the URL
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Configura Stripe'),
+            content: SelectableText(
+              'Apri questo link per completare la configurazione:\n\n$url',
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _save() async {
+    if (widget.tenantId == null) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      await Supabase.instance.client
+          .from('tenants')
+          .update({
+            'delivery_enabled': _enabled,
+            'delivery_fee': double.tryParse(_feeController.text) ?? 0,
+            'delivery_radius_km':
+                double.tryParse(_radiusController.text) ?? 5,
+            'delivery_min_order':
+                double.tryParse(_minOrderController.text) ?? 0,
+            'delivery_estimated_time_min':
+                int.tryParse(_timeController.text) ?? 30,
+          })
+          .eq('id', widget.tenantId!)
+          .select()
+          .single();
+
+      ref.invalidate(tenantProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Impostazioni consegna salvate'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore nel salvataggio: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SwitchListTile(
+          title: const Text('Abilita consegne'),
+          subtitle: const Text(
+            'Il ristorante apparirà nel marketplace per le consegne a domicilio',
+          ),
+          value: _enabled,
+          onChanged: (value) => setState(() => _enabled = value),
+          activeColor: Theme.of(context).colorScheme.primary,
+        ),
+        if (_enabled) ...[
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _DeliveryField(
+                    label: 'Costo consegna',
+                    suffix: '\u20ac',
+                    controller: _feeController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _DeliveryField(
+                    label: 'Ordine minimo',
+                    suffix: '\u20ac',
+                    controller: _minOrderController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _DeliveryField(
+                    label: 'Raggio consegna',
+                    suffix: 'km',
+                    controller: _radiusController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _DeliveryField(
+                    label: 'Tempo stimato',
+                    suffix: 'min',
+                    controller: _timeController,
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          // Stripe status
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: widget.stripeAccountId != null
+                    ? AppColors.success.withValues(alpha: 0.1)
+                    : AppColors.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    widget.stripeAccountId != null
+                        ? Icons.check_circle
+                        : Icons.info_outline,
+                    size: 20,
+                    color: widget.stripeAccountId != null
+                        ? AppColors.success
+                        : AppColors.warning,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      widget.stripeAccountId != null
+                          ? 'Stripe Connect configurato'
+                          : 'Stripe Connect non configurato — necessario per ricevere pagamenti',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: widget.stripeAccountId != null
+                            ? AppColors.success
+                            : AppColors.warning,
+                      ),
+                    ),
+                  ),
+                  if (widget.stripeAccountId == null)
+                    FilledButton.tonal(
+                      onPressed: _startStripeOnboarding,
+                      child: const Text('Configura'),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+        const Divider(height: AppSpacing.lg),
+        Padding(
+          padding: const EdgeInsets.only(
+            left: AppSpacing.md,
+            right: AppSpacing.md,
+            bottom: AppSpacing.md,
+          ),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.icon(
+              onPressed: _isSaving ? null : _save,
+              icon: _isSaving
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.save),
+              label: const Text('Salva'),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DeliveryField extends StatelessWidget {
+  final String label;
+  final String suffix;
+  final TextEditingController controller;
+  final TextInputType keyboardType;
+
+  const _DeliveryField({
+    required this.label,
+    required this.suffix,
+    required this.controller,
+    required this.keyboardType,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        labelText: label,
+        suffixText: suffix,
+        isDense: true,
+        border: const OutlineInputBorder(),
+      ),
+    );
   }
 }

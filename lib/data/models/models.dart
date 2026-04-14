@@ -1,4 +1,8 @@
 export 'category.dart';
+export 'customer.dart';
+export 'delivery_address.dart';
+export 'delivery_order.dart';
+export 'delivery_order_item.dart';
 export 'fixed_menu.dart';
 export 'menu_item.dart';
 export 'order.dart';

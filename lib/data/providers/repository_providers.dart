@@ -167,7 +167,7 @@ final activeOrdersProvider = FutureProvider<List<Order>>((ref) async {
   return repo.query(
     inList: {'status': ['pending', 'confirmed', 'preparing', 'ready']},
     orderBy: 'created_at',
-    ascending: false,
+    ascending: true,
   );
 });
 
@@ -175,7 +175,7 @@ final activeOrdersProvider = FutureProvider<List<Order>>((ref) async {
 final ordersProvider = FutureProvider<List<Order>>((ref) async {
   ref.watch(supabaseAuthProvider);
   final repo = ref.watch(orderRepositoryProvider);
-  return repo.getAll(orderBy: 'created_at', ascending: false);
+  return repo.getAll(orderBy: 'created_at', ascending: true);
 });
 
 /// Order items by order provider
@@ -195,7 +195,7 @@ final ordersStreamProvider = StreamProvider<List<Order>>((ref) {
   return client
       .from('orders')
       .stream(primaryKey: ['id'])
-      .order('created_at', ascending: false)
+      .order('created_at', ascending: true)
       .map((data) => data.map((json) => Order.fromJson(json)).toList());
 });
 
@@ -282,6 +282,25 @@ final tableByQrCodeProvider = FutureProvider.family<RestaurantTable?, String>((r
 final orderProvider = FutureProvider.family<Order?, String>((ref, id) async {
   final repo = ref.watch(orderRepositoryProvider);
   return repo.getById(id);
+});
+
+// ============================================================================
+// Staff Delivery Orders (realtime, filtered by tenant)
+// ============================================================================
+
+/// Realtime delivery orders stream for the staff's tenant
+final staffDeliveryOrdersStreamProvider = StreamProvider<List<DeliveryOrder>>((ref) {
+  ref.watch(supabaseAuthProvider);
+  final client = ref.watch(supabaseClientProvider);
+  final tenantId = ref.watch(currentTenantIdProvider);
+  if (tenantId == null) return Stream.value([]);
+
+  return client
+      .from('delivery_orders')
+      .stream(primaryKey: ['id'])
+      .eq('tenant_id', tenantId)
+      .order('created_at', ascending: false)
+      .map((data) => data.map((json) => DeliveryOrder.fromJson(json)).toList());
 });
 
 /// Current user provider

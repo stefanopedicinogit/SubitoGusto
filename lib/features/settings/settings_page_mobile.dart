@@ -177,6 +177,34 @@ class SettingsPageMobile extends ConsumerWidget {
             ),
           ),
 
+          // Delivery Section
+          _SectionHeader(title: 'Consegne'),
+          tenantAsync.when(
+            data: (tenant) => _DeliverySettingsMobile(
+              deliveryEnabled: tenant?.deliveryEnabled ?? false,
+              deliveryFee: tenant?.deliveryFee ?? 0,
+              deliveryRadiusKm: tenant?.deliveryRadiusKm ?? 5,
+              deliveryMinOrder: tenant?.deliveryMinOrder ?? 0,
+              deliveryEstimatedTimeMin: tenant?.deliveryEstimatedTimeMin ?? 30,
+              stripeAccountId: tenant?.stripeAccountId,
+              tenantId: tenant?.id,
+            ),
+            loading: () => const Card(
+              margin: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.xl),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ),
+            error: (_, __) => const Card(
+              margin: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: ListTile(
+                leading: Icon(Icons.error, color: AppColors.error),
+                title: Text('Errore nel caricamento'),
+              ),
+            ),
+          ),
+
           // Theme Section
           _SectionHeader(title: 'Aspetto'),
           Card(
@@ -416,7 +444,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Cambia Password',
+                'Cambia password',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -479,6 +507,287 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _DeliverySettingsMobile extends ConsumerStatefulWidget {
+  final bool deliveryEnabled;
+  final double deliveryFee;
+  final double deliveryRadiusKm;
+  final double deliveryMinOrder;
+  final int deliveryEstimatedTimeMin;
+  final String? stripeAccountId;
+  final String? tenantId;
+
+  const _DeliverySettingsMobile({
+    required this.deliveryEnabled,
+    required this.deliveryFee,
+    required this.deliveryRadiusKm,
+    required this.deliveryMinOrder,
+    required this.deliveryEstimatedTimeMin,
+    this.stripeAccountId,
+    this.tenantId,
+  });
+
+  @override
+  ConsumerState<_DeliverySettingsMobile> createState() =>
+      _DeliverySettingsMobileState();
+}
+
+class _DeliverySettingsMobileState
+    extends ConsumerState<_DeliverySettingsMobile> {
+  late bool _enabled;
+  late TextEditingController _feeController;
+  late TextEditingController _radiusController;
+  late TextEditingController _minOrderController;
+  late TextEditingController _timeController;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _enabled = widget.deliveryEnabled;
+    _feeController =
+        TextEditingController(text: widget.deliveryFee.toStringAsFixed(2));
+    _radiusController =
+        TextEditingController(text: widget.deliveryRadiusKm.toStringAsFixed(1));
+    _minOrderController =
+        TextEditingController(text: widget.deliveryMinOrder.toStringAsFixed(2));
+    _timeController =
+        TextEditingController(text: widget.deliveryEstimatedTimeMin.toString());
+  }
+
+  @override
+  void didUpdateWidget(covariant _DeliverySettingsMobile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.deliveryEnabled != widget.deliveryEnabled) {
+      _enabled = widget.deliveryEnabled;
+    }
+    if (oldWidget.deliveryFee != widget.deliveryFee) {
+      _feeController.text = widget.deliveryFee.toStringAsFixed(2);
+    }
+    if (oldWidget.deliveryRadiusKm != widget.deliveryRadiusKm) {
+      _radiusController.text = widget.deliveryRadiusKm.toStringAsFixed(1);
+    }
+    if (oldWidget.deliveryMinOrder != widget.deliveryMinOrder) {
+      _minOrderController.text = widget.deliveryMinOrder.toStringAsFixed(2);
+    }
+    if (oldWidget.deliveryEstimatedTimeMin != widget.deliveryEstimatedTimeMin) {
+      _timeController.text = widget.deliveryEstimatedTimeMin.toString();
+    }
+  }
+
+  @override
+  void dispose() {
+    _feeController.dispose();
+    _radiusController.dispose();
+    _minOrderController.dispose();
+    _timeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (widget.tenantId == null) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      await Supabase.instance.client
+          .from('tenants')
+          .update({
+            'delivery_enabled': _enabled,
+            'delivery_fee': double.tryParse(_feeController.text) ?? 0,
+            'delivery_radius_km':
+                double.tryParse(_radiusController.text) ?? 5,
+            'delivery_min_order':
+                double.tryParse(_minOrderController.text) ?? 0,
+            'delivery_estimated_time_min':
+                int.tryParse(_timeController.text) ?? 30,
+          })
+          .eq('id', widget.tenantId!)
+          .select()
+          .single();
+
+      ref.invalidate(tenantProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Impostazioni consegna salvate'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Errore nel salvataggio: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryColor = ref.watch(tenantColorsProvider).primary;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Column(
+        children: [
+          SwitchListTile(
+            secondary: const Icon(Icons.delivery_dining),
+            title: const Text('Abilita consegne'),
+            subtitle: const Text('Appari nel marketplace'),
+            value: _enabled,
+            onChanged: (value) => setState(() => _enabled = value),
+            activeColor: primaryColor,
+          ),
+          if (_enabled) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _feeController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                          decoration: const InputDecoration(
+                            labelText: 'Costo consegna',
+                            suffixText: '\u20ac',
+                            isDense: true,
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: TextField(
+                          controller: _minOrderController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                          decoration: const InputDecoration(
+                            labelText: 'Ordine minimo',
+                            suffixText: '\u20ac',
+                            isDense: true,
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _radiusController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                          decoration: const InputDecoration(
+                            labelText: 'Raggio',
+                            suffixText: 'km',
+                            isDense: true,
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: TextField(
+                          controller: _timeController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Tempo stimato',
+                            suffixText: 'min',
+                            isDense: true,
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Stripe status
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: widget.stripeAccountId != null
+                      ? AppColors.success.withValues(alpha: 0.1)
+                      : AppColors.warning.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      widget.stripeAccountId != null
+                          ? Icons.check_circle
+                          : Icons.info_outline,
+                      size: 18,
+                      color: widget.stripeAccountId != null
+                          ? AppColors.success
+                          : AppColors.warning,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        widget.stripeAccountId != null
+                            ? 'Stripe Connect configurato'
+                            : 'Stripe non configurato',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: widget.stripeAccountId != null
+                              ? AppColors.success
+                              : AppColors.warning,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          const Divider(height: AppSpacing.lg),
+          Padding(
+            padding: const EdgeInsets.only(
+              left: AppSpacing.md,
+              right: AppSpacing.md,
+              bottom: AppSpacing.md,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _isSaving ? null : _save,
+                icon: _isSaving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.save),
+                label: const Text('Salva'),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

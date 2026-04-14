@@ -27,41 +27,89 @@ import 'features/users/users_page.dart';
 import 'features/kitchen/kitchen_display_page.dart';
 import 'features/analytics/analytics_page.dart';
 import 'features/fixed_menu/fixed_menu_management_page.dart';
+import 'features/consumer_auth/consumer_login_page.dart';
+import 'features/consumer_auth/consumer_register_page.dart';
+import 'features/consumer_shell/consumer_shell.dart';
+import 'features/marketplace/marketplace_page.dart';
+import 'features/marketplace/restaurant_detail_page.dart';
+import 'features/consumer_orders/consumer_orders_page.dart';
+import 'features/consumer_orders/consumer_order_detail_page.dart';
+import 'features/consumer_profile/consumer_profile_page.dart';
+import 'features/consumer_profile/addresses_page.dart';
+import 'features/checkout/checkout_page.dart';
+import 'features/checkout/order_confirmation_page.dart';
+
+/// Staff routes that require authentication
+const _staffRoutes = {'/', '/orders', '/menu', '/tables', '/settings', '/users', '/analytics', '/fixed-menus', '/kitchen'};
+
+/// Routes that are always public (no auth required) or consumer routes
+bool _isPublicRoute(String location) {
+  return location.startsWith('/scan') ||
+      location.startsWith('/customer-menu') ||
+      location.startsWith('/consumer/') ||
+      location.startsWith('/marketplace') ||
+      location.startsWith('/checkout') ||
+      location.startsWith('/order-confirmation');
+}
 
 /// Router provider
+/// Converts a stream into a ChangeNotifier for GoRouter.refreshListenable
+class _GoRouterRefreshStream extends ChangeNotifier {
+  _GoRouterRefreshStream(Stream<dynamic> stream) {
+    stream.listen((_) => notifyListeners());
+  }
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(supabaseAuthProvider);
+  final authStream = ref.read(supabaseClientProvider).auth.onAuthStateChange;
 
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/consumer/login',
     debugLogDiagnostics: true,
+    refreshListenable: _GoRouterRefreshStream(authStream),
     redirect: (context, state) {
-      final isLoggingIn = state.matchedLocation == '/login';
-      final isRegistering = state.matchedLocation == '/register';
-      final isScanRoute = state.matchedLocation.startsWith('/scan');
+      final location = state.matchedLocation;
+      final auth = ref.read(supabaseAuthProvider).valueOrNull;
+      final isAuthenticated = auth?.isAuthenticated ?? false;
+      final isStaff = auth?.isStaff ?? false;
+      final isConsumer = auth?.isConsumer ?? false;
 
-      // Allow scan routes without authentication (for customers)
-      if (isScanRoute) {
+      // Public routes: scan, customer-menu, consumer auth, marketplace
+      if (_isPublicRoute(location)) {
+        // Authenticated consumer on consumer login/register → marketplace
+        if (isAuthenticated && isConsumer &&
+            (location == '/consumer/login' || location == '/consumer/register')) {
+          return '/marketplace';
+        }
+        // Authenticated staff on consumer login → staff dashboard
+        if (isAuthenticated && isStaff && location == '/consumer/login') {
+          return '/';
+        }
         return null;
       }
 
-      final auth = authState.valueOrNull;
-      final isAuthenticated = auth?.isAuthenticated ?? false;
-
-      // Redirect to login if not authenticated (except for register page)
-      if (!isAuthenticated && !isLoggingIn && !isRegistering) {
-        return '/login';
+      // Staff login/register pages
+      if (location == '/login' || location == '/register') {
+        if (isAuthenticated && isStaff) return '/';
+        if (isAuthenticated && isConsumer) return '/marketplace';
+        return null;
       }
 
-      // Redirect to dashboard if authenticated and trying to access login/register
-      if (isAuthenticated && (isLoggingIn || isRegistering)) {
-        return '/';
+      // Staff-only routes require staff auth
+      if (_staffRoutes.contains(location) || location == '/') {
+        if (!isAuthenticated) return '/login';
+        if (isConsumer) return '/marketplace';
+        return null;
       }
 
+      // Default: require some auth
+      if (!isAuthenticated) return '/login';
       return null;
     },
     routes: [
-      // Login route (no shell)
+      // ====================================================================
+      // Staff auth routes (no shell)
+      // ====================================================================
       GoRoute(
         path: '/login',
         builder: (context, state) => _AdaptivePage(
@@ -69,14 +117,26 @@ final routerProvider = Provider<GoRouter>((ref) {
           mobile: const LoginPageMobile(),
         ),
       ),
-
-      // Register tenant route (no shell)
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterTenantPage(),
       ),
 
-      // Customer scan route (no shell)
+      // ====================================================================
+      // Consumer auth routes (no shell)
+      // ====================================================================
+      GoRoute(
+        path: '/consumer/login',
+        builder: (context, state) => const ConsumerLoginPage(),
+      ),
+      GoRoute(
+        path: '/consumer/register',
+        builder: (context, state) => const ConsumerRegisterPage(),
+      ),
+
+      // ====================================================================
+      // QR / dine-in routes (no shell, no auth)
+      // ====================================================================
       GoRoute(
         path: '/scan/:qrCode',
         builder: (context, state) {
@@ -84,20 +144,76 @@ final routerProvider = Provider<GoRouter>((ref) {
           return ScanPage(qrCode: qrCode);
         },
       ),
-
-      // Customer menu route (no shell)
       GoRoute(
         path: '/customer-menu',
         builder: (context, state) => const CustomerMenuPage(),
       ),
 
-      // Kitchen display route (fullscreen, no shell)
+      // ====================================================================
+      // Kitchen display (fullscreen, no shell)
+      // ====================================================================
       GoRoute(
         path: '/kitchen',
         builder: (context, state) => const KitchenDisplayPage(),
       ),
 
-      // Staff routes with shell
+      // ====================================================================
+      // Consumer routes with ConsumerShell
+      // ====================================================================
+      ShellRoute(
+        builder: (context, state, child) => ConsumerShell(child: child),
+        routes: [
+          GoRoute(
+            path: '/marketplace',
+            builder: (context, state) => const MarketplacePage(),
+          ),
+          GoRoute(
+            path: '/marketplace/:restaurantId',
+            builder: (context, state) {
+              final restaurantId = state.pathParameters['restaurantId'] ?? '';
+              return RestaurantDetailPage(restaurantId: restaurantId);
+            },
+          ),
+          GoRoute(
+            path: '/consumer/orders',
+            builder: (context, state) => const ConsumerOrdersPage(),
+          ),
+          GoRoute(
+            path: '/consumer/orders/:orderId',
+            builder: (context, state) {
+              final orderId = state.pathParameters['orderId'] ?? '';
+              return ConsumerOrderDetailPage(orderId: orderId);
+            },
+          ),
+          GoRoute(
+            path: '/consumer/profile',
+            builder: (context, state) => const ConsumerProfilePage(),
+          ),
+          GoRoute(
+            path: '/consumer/addresses',
+            builder: (context, state) => const AddressesPage(),
+          ),
+        ],
+      ),
+
+      // ====================================================================
+      // Checkout routes (consumer, no shell)
+      // ====================================================================
+      GoRoute(
+        path: '/checkout',
+        builder: (context, state) => const CheckoutPage(),
+      ),
+      GoRoute(
+        path: '/order-confirmation/:orderId',
+        builder: (context, state) {
+          final orderId = state.pathParameters['orderId'] ?? '';
+          return OrderConfirmationPage(orderId: orderId);
+        },
+      ),
+
+      // ====================================================================
+      // Staff routes with adaptive shell
+      // ====================================================================
       ShellRoute(
         builder: (context, state, child) {
           return _AdaptiveShellWrapper(

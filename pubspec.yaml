@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
 
   # UI e Design
   cupertino_icons: ^1.0.8
@@ -32,6 +34,12 @@ dependencies:
   # QR Code
   qr_flutter: ^4.1.0
   mobile_scanner: ^5.1.1
+
+  # Payments
+  flutter_stripe: ^11.4.0
+
+  # Web support
+  web: ^1.1.0
 
   # Utilities
   intl: ^0.20.2

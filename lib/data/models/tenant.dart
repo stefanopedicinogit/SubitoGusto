@@ -18,6 +18,13 @@ class Tenant with _$Tenant {
     String? email,
     @JsonKey(name: 'opening_hours') Map<String, dynamic>? openingHours,
     Map<String, dynamic>? settings,
+    // Delivery settings
+    @JsonKey(name: 'delivery_enabled') @Default(false) bool deliveryEnabled,
+    @JsonKey(name: 'delivery_fee') @Default(0) double deliveryFee,
+    @JsonKey(name: 'delivery_radius_km') @Default(5.0) double deliveryRadiusKm,
+    @JsonKey(name: 'delivery_min_order') @Default(0) double deliveryMinOrder,
+    @JsonKey(name: 'delivery_estimated_time_min') @Default(45) int deliveryEstimatedTimeMin,
+    @JsonKey(name: 'stripe_account_id') String? stripeAccountId,
     @JsonKey(name: 'created_at') required DateTime createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
   }) = _Tenant;
@@ -43,4 +50,18 @@ class Tenant with _$Tenant {
 
   /// Logo initial letter for display
   String get logoInitial => name.isNotEmpty ? name[0].toUpperCase() : 'T';
+
+  /// Whether Stripe Connect is set up for this tenant
+  bool get hasStripeAccount => stripeAccountId != null && stripeAccountId!.isNotEmpty;
+
+  /// Format delivery fee with currency
+  String formatDeliveryFee([String currency = '€']) =>
+      deliveryFee > 0 ? '$currency ${deliveryFee.toStringAsFixed(2)}' : 'Gratis';
+
+  /// Format minimum order with currency
+  String formatMinOrder([String currency = '€']) =>
+      '$currency ${deliveryMinOrder.toStringAsFixed(2)}';
+
+  /// Format estimated delivery time
+  String get estimatedTimeDisplay => '$deliveryEstimatedTimeMin min';
 }

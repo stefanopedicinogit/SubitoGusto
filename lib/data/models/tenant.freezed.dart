@@ -33,7 +33,20 @@ mixin _$Tenant {
   String? get email => throw _privateConstructorUsedError;
   @JsonKey(name: 'opening_hours')
   Map<String, dynamic>? get openingHours => throw _privateConstructorUsedError;
-  Map<String, dynamic>? get settings => throw _privateConstructorUsedError;
+  Map<String, dynamic>? get settings =>
+      throw _privateConstructorUsedError; // Delivery settings
+  @JsonKey(name: 'delivery_enabled')
+  bool get deliveryEnabled => throw _privateConstructorUsedError;
+  @JsonKey(name: 'delivery_fee')
+  double get deliveryFee => throw _privateConstructorUsedError;
+  @JsonKey(name: 'delivery_radius_km')
+  double get deliveryRadiusKm => throw _privateConstructorUsedError;
+  @JsonKey(name: 'delivery_min_order')
+  double get deliveryMinOrder => throw _privateConstructorUsedError;
+  @JsonKey(name: 'delivery_estimated_time_min')
+  int get deliveryEstimatedTimeMin => throw _privateConstructorUsedError;
+  @JsonKey(name: 'stripe_account_id')
+  String? get stripeAccountId => throw _privateConstructorUsedError;
   @JsonKey(name: 'created_at')
   DateTime get createdAt => throw _privateConstructorUsedError;
   @JsonKey(name: 'updated_at')
@@ -64,6 +77,12 @@ abstract class $TenantCopyWith<$Res> {
     String? email,
     @JsonKey(name: 'opening_hours') Map<String, dynamic>? openingHours,
     Map<String, dynamic>? settings,
+    @JsonKey(name: 'delivery_enabled') bool deliveryEnabled,
+    @JsonKey(name: 'delivery_fee') double deliveryFee,
+    @JsonKey(name: 'delivery_radius_km') double deliveryRadiusKm,
+    @JsonKey(name: 'delivery_min_order') double deliveryMinOrder,
+    @JsonKey(name: 'delivery_estimated_time_min') int deliveryEstimatedTimeMin,
+    @JsonKey(name: 'stripe_account_id') String? stripeAccountId,
     @JsonKey(name: 'created_at') DateTime createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
   });
@@ -94,6 +113,12 @@ class _$TenantCopyWithImpl<$Res, $Val extends Tenant>
     Object? email = freezed,
     Object? openingHours = freezed,
     Object? settings = freezed,
+    Object? deliveryEnabled = null,
+    Object? deliveryFee = null,
+    Object? deliveryRadiusKm = null,
+    Object? deliveryMinOrder = null,
+    Object? deliveryEstimatedTimeMin = null,
+    Object? stripeAccountId = freezed,
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
@@ -139,6 +164,30 @@ class _$TenantCopyWithImpl<$Res, $Val extends Tenant>
                 ? _value.settings
                 : settings // ignore: cast_nullable_to_non_nullable
                       as Map<String, dynamic>?,
+            deliveryEnabled: null == deliveryEnabled
+                ? _value.deliveryEnabled
+                : deliveryEnabled // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            deliveryFee: null == deliveryFee
+                ? _value.deliveryFee
+                : deliveryFee // ignore: cast_nullable_to_non_nullable
+                      as double,
+            deliveryRadiusKm: null == deliveryRadiusKm
+                ? _value.deliveryRadiusKm
+                : deliveryRadiusKm // ignore: cast_nullable_to_non_nullable
+                      as double,
+            deliveryMinOrder: null == deliveryMinOrder
+                ? _value.deliveryMinOrder
+                : deliveryMinOrder // ignore: cast_nullable_to_non_nullable
+                      as double,
+            deliveryEstimatedTimeMin: null == deliveryEstimatedTimeMin
+                ? _value.deliveryEstimatedTimeMin
+                : deliveryEstimatedTimeMin // ignore: cast_nullable_to_non_nullable
+                      as int,
+            stripeAccountId: freezed == stripeAccountId
+                ? _value.stripeAccountId
+                : stripeAccountId // ignore: cast_nullable_to_non_nullable
+                      as String?,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -172,6 +221,12 @@ abstract class _$$TenantImplCopyWith<$Res> implements $TenantCopyWith<$Res> {
     String? email,
     @JsonKey(name: 'opening_hours') Map<String, dynamic>? openingHours,
     Map<String, dynamic>? settings,
+    @JsonKey(name: 'delivery_enabled') bool deliveryEnabled,
+    @JsonKey(name: 'delivery_fee') double deliveryFee,
+    @JsonKey(name: 'delivery_radius_km') double deliveryRadiusKm,
+    @JsonKey(name: 'delivery_min_order') double deliveryMinOrder,
+    @JsonKey(name: 'delivery_estimated_time_min') int deliveryEstimatedTimeMin,
+    @JsonKey(name: 'stripe_account_id') String? stripeAccountId,
     @JsonKey(name: 'created_at') DateTime createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
   });
@@ -201,6 +256,12 @@ class __$$TenantImplCopyWithImpl<$Res>
     Object? email = freezed,
     Object? openingHours = freezed,
     Object? settings = freezed,
+    Object? deliveryEnabled = null,
+    Object? deliveryFee = null,
+    Object? deliveryRadiusKm = null,
+    Object? deliveryMinOrder = null,
+    Object? deliveryEstimatedTimeMin = null,
+    Object? stripeAccountId = freezed,
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
@@ -246,6 +307,30 @@ class __$$TenantImplCopyWithImpl<$Res>
             ? _value._settings
             : settings // ignore: cast_nullable_to_non_nullable
                   as Map<String, dynamic>?,
+        deliveryEnabled: null == deliveryEnabled
+            ? _value.deliveryEnabled
+            : deliveryEnabled // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        deliveryFee: null == deliveryFee
+            ? _value.deliveryFee
+            : deliveryFee // ignore: cast_nullable_to_non_nullable
+                  as double,
+        deliveryRadiusKm: null == deliveryRadiusKm
+            ? _value.deliveryRadiusKm
+            : deliveryRadiusKm // ignore: cast_nullable_to_non_nullable
+                  as double,
+        deliveryMinOrder: null == deliveryMinOrder
+            ? _value.deliveryMinOrder
+            : deliveryMinOrder // ignore: cast_nullable_to_non_nullable
+                  as double,
+        deliveryEstimatedTimeMin: null == deliveryEstimatedTimeMin
+            ? _value.deliveryEstimatedTimeMin
+            : deliveryEstimatedTimeMin // ignore: cast_nullable_to_non_nullable
+                  as int,
+        stripeAccountId: freezed == stripeAccountId
+            ? _value.stripeAccountId
+            : stripeAccountId // ignore: cast_nullable_to_non_nullable
+                  as String?,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -273,6 +358,13 @@ class _$TenantImpl extends _Tenant {
     this.email,
     @JsonKey(name: 'opening_hours') final Map<String, dynamic>? openingHours,
     final Map<String, dynamic>? settings,
+    @JsonKey(name: 'delivery_enabled') this.deliveryEnabled = false,
+    @JsonKey(name: 'delivery_fee') this.deliveryFee = 0,
+    @JsonKey(name: 'delivery_radius_km') this.deliveryRadiusKm = 5.0,
+    @JsonKey(name: 'delivery_min_order') this.deliveryMinOrder = 0,
+    @JsonKey(name: 'delivery_estimated_time_min')
+    this.deliveryEstimatedTimeMin = 45,
+    @JsonKey(name: 'stripe_account_id') this.stripeAccountId,
     @JsonKey(name: 'created_at') required this.createdAt,
     @JsonKey(name: 'updated_at') this.updatedAt,
   }) : _openingHours = openingHours,
@@ -321,6 +413,25 @@ class _$TenantImpl extends _Tenant {
     return EqualUnmodifiableMapView(value);
   }
 
+  // Delivery settings
+  @override
+  @JsonKey(name: 'delivery_enabled')
+  final bool deliveryEnabled;
+  @override
+  @JsonKey(name: 'delivery_fee')
+  final double deliveryFee;
+  @override
+  @JsonKey(name: 'delivery_radius_km')
+  final double deliveryRadiusKm;
+  @override
+  @JsonKey(name: 'delivery_min_order')
+  final double deliveryMinOrder;
+  @override
+  @JsonKey(name: 'delivery_estimated_time_min')
+  final int deliveryEstimatedTimeMin;
+  @override
+  @JsonKey(name: 'stripe_account_id')
+  final String? stripeAccountId;
   @override
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
@@ -330,7 +441,7 @@ class _$TenantImpl extends _Tenant {
 
   @override
   String toString() {
-    return 'Tenant(id: $id, name: $name, description: $description, logoUrl: $logoUrl, coverImageUrl: $coverImageUrl, address: $address, phone: $phone, email: $email, openingHours: $openingHours, settings: $settings, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Tenant(id: $id, name: $name, description: $description, logoUrl: $logoUrl, coverImageUrl: $coverImageUrl, address: $address, phone: $phone, email: $email, openingHours: $openingHours, settings: $settings, deliveryEnabled: $deliveryEnabled, deliveryFee: $deliveryFee, deliveryRadiusKm: $deliveryRadiusKm, deliveryMinOrder: $deliveryMinOrder, deliveryEstimatedTimeMin: $deliveryEstimatedTimeMin, stripeAccountId: $stripeAccountId, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -353,6 +464,21 @@ class _$TenantImpl extends _Tenant {
               _openingHours,
             ) &&
             const DeepCollectionEquality().equals(other._settings, _settings) &&
+            (identical(other.deliveryEnabled, deliveryEnabled) ||
+                other.deliveryEnabled == deliveryEnabled) &&
+            (identical(other.deliveryFee, deliveryFee) ||
+                other.deliveryFee == deliveryFee) &&
+            (identical(other.deliveryRadiusKm, deliveryRadiusKm) ||
+                other.deliveryRadiusKm == deliveryRadiusKm) &&
+            (identical(other.deliveryMinOrder, deliveryMinOrder) ||
+                other.deliveryMinOrder == deliveryMinOrder) &&
+            (identical(
+                  other.deliveryEstimatedTimeMin,
+                  deliveryEstimatedTimeMin,
+                ) ||
+                other.deliveryEstimatedTimeMin == deliveryEstimatedTimeMin) &&
+            (identical(other.stripeAccountId, stripeAccountId) ||
+                other.stripeAccountId == stripeAccountId) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -373,6 +499,12 @@ class _$TenantImpl extends _Tenant {
     email,
     const DeepCollectionEquality().hash(_openingHours),
     const DeepCollectionEquality().hash(_settings),
+    deliveryEnabled,
+    deliveryFee,
+    deliveryRadiusKm,
+    deliveryMinOrder,
+    deliveryEstimatedTimeMin,
+    stripeAccountId,
     createdAt,
     updatedAt,
   );
@@ -403,6 +535,13 @@ abstract class _Tenant extends Tenant {
     final String? email,
     @JsonKey(name: 'opening_hours') final Map<String, dynamic>? openingHours,
     final Map<String, dynamic>? settings,
+    @JsonKey(name: 'delivery_enabled') final bool deliveryEnabled,
+    @JsonKey(name: 'delivery_fee') final double deliveryFee,
+    @JsonKey(name: 'delivery_radius_km') final double deliveryRadiusKm,
+    @JsonKey(name: 'delivery_min_order') final double deliveryMinOrder,
+    @JsonKey(name: 'delivery_estimated_time_min')
+    final int deliveryEstimatedTimeMin,
+    @JsonKey(name: 'stripe_account_id') final String? stripeAccountId,
     @JsonKey(name: 'created_at') required final DateTime createdAt,
     @JsonKey(name: 'updated_at') final DateTime? updatedAt,
   }) = _$TenantImpl;
@@ -432,7 +571,25 @@ abstract class _Tenant extends Tenant {
   @JsonKey(name: 'opening_hours')
   Map<String, dynamic>? get openingHours;
   @override
-  Map<String, dynamic>? get settings;
+  Map<String, dynamic>? get settings; // Delivery settings
+  @override
+  @JsonKey(name: 'delivery_enabled')
+  bool get deliveryEnabled;
+  @override
+  @JsonKey(name: 'delivery_fee')
+  double get deliveryFee;
+  @override
+  @JsonKey(name: 'delivery_radius_km')
+  double get deliveryRadiusKm;
+  @override
+  @JsonKey(name: 'delivery_min_order')
+  double get deliveryMinOrder;
+  @override
+  @JsonKey(name: 'delivery_estimated_time_min')
+  int get deliveryEstimatedTimeMin;
+  @override
+  @JsonKey(name: 'stripe_account_id')
+  String? get stripeAccountId;
   @override
   @JsonKey(name: 'created_at')
   DateTime get createdAt;
