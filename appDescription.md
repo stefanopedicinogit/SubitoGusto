@@ -1,3 +1,212 @@
+# SubitoGusto — App Description
+
+[Jump to Italiano ⬇](#-italiano)
+
+## Overview
+
+**SubitoGusto** is a modern application for managing table orders via QR code. The main goal is to improve the customer experience and optimize the work of the dining-room staff, reducing waiting times and errors when taking orders.
+
+---
+
+## How It Works
+
+### For the Customer
+
+1. **Scan QR Code**
+   The customer sits down at the table and finds a QR code placed on the table or on the menu. By scanning the code with their smartphone, they go directly to the restaurant's digital menu.
+
+2. **Browse the Menu**
+   The menu is displayed clearly, organized by categories:
+   - Appetizers
+   - First Courses
+   - Main Courses
+   - Sides
+   - Desserts
+   - Drinks
+
+   Each dish shows name, description, price, and any indications for allergens or dietary preferences (vegetarian, vegan, gluten-free, spicy).
+
+3. **Select Dishes**
+   The customer can browse categories, filter dishes, and add the ones they want to their virtual cart.
+
+4. **Submit the Order**
+   Once the selection is complete, the customer confirms the order, which is sent directly to the kitchen and the dining-room staff.
+
+5. **Real-Time Tracking**
+   The customer can see the status of their order in real time:
+   - Waiting for confirmation
+   - Confirmed
+   - In preparation
+   - Ready to be served
+
+---
+
+### For the Staff
+
+1. **Orders Dashboard**
+   Dining-room and kitchen staff have access to a dashboard that shows all active orders in real time. Orders appear automatically as soon as they are sent by customers.
+
+2. **Order Status Management**
+   Staff can update each order's status as it progresses:
+   - Confirm receipt
+   - Mark the start of preparation
+   - Indicate when the dish is ready
+
+3. **Menu Management**
+   The administrator can:
+   - Add, edit, or remove dishes from the menu
+   - Create and organize categories
+   - Set dish availability (useful when an ingredient runs out)
+   - Upload dish photos
+
+4. **Table Management**
+   You can configure the restaurant's tables, each with its own unique QR code. This makes it possible to always know which table each order comes from.
+
+---
+
+## Main Benefits
+
+### For the Restaurant
+
+- **Fewer errors**: Orders arrive written directly by the customer, eliminating misunderstandings
+- **Greater efficiency**: Staff don't need to move around to take orders
+- **Instant updates**: Price or availability changes immediately reflected on every table
+- **Paper savings**: No more paper menus to reprint
+- **Data and statistics**: Ability to analyze which dishes are most popular
+
+### For the Customer
+
+- **Autonomy**: Orders whenever they want, without waiting for the waiter
+- **Clarity**: Sees photos, descriptions, and prices of each dish
+- **Transparency**: Always knows the status of their order
+- **Convenience**: Uses their own smartphone, which is already familiar
+- **Allergen information**: Easily identifies dishes suitable for their needs
+
+---
+
+## Digital Menu Features
+
+### Category Organization
+Dishes are grouped into categories (Appetizers, First Courses, Main Courses, etc.) with the ability to filter quickly.
+
+### Dish Card
+Each dish includes:
+- Name
+- Ingredient description
+- Price
+- Photo (when available)
+- Dietary indications (vegetarian, vegan, gluten-free)
+- Allergen warnings
+- Estimated preparation time
+
+### Icons and Symbols
+Intuitive symbols are used to make the menu easier to read:
+- 🥬 Vegetarian
+- 🌱 Vegan
+- 🌾 Gluten-Free
+- 🌶️ Spicy
+- ⭐ Chef's Recommendation
+
+---
+
+## Order Flow
+
+```
+Customer scans QR
+        ↓
+Sees menu on phone
+        ↓
+Adds dishes to cart
+        ↓
+Confirms order
+        ↓
+Order appears on staff dashboard
+        ↓
+Staff confirms receipt
+        ↓
+Kitchen prepares dishes
+        ↓
+Staff marks "Ready"
+        ↓
+Customer is served
+```
+
+---
+
+## Interfaces
+
+### Customer Version (Mobile)
+Optimized for smartphones, with:
+- Clean, readable design
+- Simple navigation with touch gestures
+- Fast loading even on slow connections
+- No app to download (works from the browser)
+
+### Staff Version (Desktop/Tablet)
+Designed for management, with:
+- Panoramic view of all orders
+- Full menu management
+- Table and QR code configuration
+- Restricted access with credentials
+
+---
+
+## Design and Style
+
+The app adopts an elegant and refined style, in line with the atmosphere of a quality restaurant:
+
+- **Primary colors**: Burgundy and gold, evoking the world of wine and classy dining
+- **Background**: Warm, welcoming cream tones
+- **Typography**: Readable and sophisticated
+- **Imagery**: High-quality dish photography
+
+---
+
+## Usage Requirements
+
+### For Customers
+- Smartphone with camera (for QR scanning)
+- Internet connection (restaurant WiFi or mobile data)
+- Modern web browser (Chrome, Safari, Firefox)
+
+### For Staff
+- Computer, tablet, or smartphone
+- Internet connection
+- Login credentials provided by the administrator
+
+---
+
+## Security and Privacy
+
+- Order data is protected and accessible only to authorized staff
+- No personal customer data is collected beyond what is necessary for the order
+- Each restaurant only has access to its own data (multi-tenant system)
+- Communications are encrypted
+
+---
+
+## Multi-Restaurant Support
+
+The application is set up to manage multiple restaurants independently. Each restaurant has:
+- Its own customized menu
+- Its own tables and QR codes
+- Its own staff with dedicated credentials
+- Its own data, separated from the others
+
+---
+
+## Conclusion
+
+**SubitoGusto** represents a step forward in the digitalization of restaurant service, while preserving the warmth and customer focus typical of Italian tradition. The goal is not to replace the human relationship between waiter and customer, but to free up valuable time so staff can devote themselves to even more attentive, personalized service.
+
+---
+
+*Built with modern technologies to ensure speed, reliability, and ease of use.*
+
+---
+
+# 🇮🇹 Italiano
+
 # SubitoGusto - Descrizione Applicativo
 
 ## Panoramica
