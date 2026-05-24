@@ -17,58 +17,81 @@ class MenuManagementPageMobile extends ConsumerWidget {
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final l = AppLocalizations.of(context);
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        ref.invalidate(categoriesStreamProvider);
-        ref.invalidate(menuItemsStreamProvider);
-      },
-      child: categoriesAsync.when(
-        data: (categories) {
-          if (categories.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.restaurant_menu,
-                    size: 64,
-                    color: AppColors.textSecondary.withValues(alpha: 0.5),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    l.menuMgmtEmptyCategories,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  FilledButton.icon(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => const CategoryDialog(),
-                      );
-                    },
-                    icon: const Icon(Icons.add),
-                    label: Text(l.menuMgmtAddCategory),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            itemCount: categories.length,
-            itemBuilder: (context, index) {
-              final category = categories[index];
-              return _CategoryCard(category: category);
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            AppSpacing.sm,
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => const CategoryDialog(),
+                );
+              },
+              icon: const Icon(Icons.add),
+              label: Text(l.menuMgmtAddCategory),
+            ),
+          ),
+        ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(categoriesStreamProvider);
+              ref.invalidate(menuItemsStreamProvider);
             },
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Errore: $e')),
-      ),
+            child: categoriesAsync.when(
+              data: (categories) {
+                if (categories.isEmpty) {
+                  return ListView(
+                    children: [
+                      const SizedBox(height: 120),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.restaurant_menu,
+                            size: 64,
+                            color:
+                                AppColors.textSecondary.withValues(alpha: 0.5),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            l.menuMgmtEmptyCategories,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  itemCount: categories.length,
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    return _CategoryCard(category: category);
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Errore: $e')),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
