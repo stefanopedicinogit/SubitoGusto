@@ -28,4 +28,4 @@ flutter config --enable-web
 flutter pub get
 
 # Build for web with release optimizations
-flutter build web --release html --base-href /
+flutter build web --release --base-href /
