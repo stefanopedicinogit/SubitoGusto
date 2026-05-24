@@ -92,27 +92,24 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Public routes: scan, customer-menu, consumer auth, marketplace
       if (_isPublicRoute(location)) {
-        // Authenticated consumer on consumer login/register → marketplace
-        // (or returnTo if a QR-flow page sent them here to log in).
+        // QR-flow handoff: authenticated consumer landing on an auth page
+        // with an explicit returnTo (e.g. ?returnTo=/scan/X) should be sent
+        // to that target. Without returnTo we stay on the auth page so the
+        // user must explicitly sign in instead of being silently redirected.
         if (isAuthenticated && isConsumer &&
             (location == '/consumer/login' || location == '/consumer/register')) {
           final returnTo = state.uri.queryParameters['returnTo'];
           if (returnTo != null && returnTo.isNotEmpty) {
             return returnTo;
           }
-          return '/marketplace';
-        }
-        // Authenticated staff on consumer login → staff dashboard
-        if (isAuthenticated && isStaff && location == '/consumer/login') {
-          return '/';
         }
         return null;
       }
 
-      // Staff login/register pages
+      // Staff login/register pages: never auto-redirect away. If the user
+      // navigates here they must explicitly authenticate, even if a stale
+      // session is still loaded.
       if (location == '/login' || location == '/register') {
-        if (isAuthenticated && isStaff) return '/';
-        if (isAuthenticated && isConsumer) return '/marketplace';
         return null;
       }
 
