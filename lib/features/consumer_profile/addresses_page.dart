@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/error_messages.dart';
 import '../../data/models/delivery_address.dart';
 import '../../data/providers/consumer_providers.dart';
+import '../../data/services/geocoding_service.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Delivery addresses management page
 class AddressesPage extends ConsumerWidget {
@@ -14,10 +17,11 @@ class AddressesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final addressesAsync = ref.watch(deliveryAddressesProvider);
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Indirizzi di consegna'),
+        title: Text(l.addressesTitle),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -47,7 +51,7 @@ class AddressesPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Text(
-                    'Nessun indirizzo salvato',
+                    l.addressesEmpty,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -56,7 +60,7 @@ class AddressesPage extends ConsumerWidget {
                   FilledButton.icon(
                     onPressed: () => _showAddressForm(context, ref),
                     icon: const Icon(Icons.add),
-                    label: const Text('Aggiungi indirizzo'),
+                    label: Text(l.addressesAdd),
                   ),
                 ],
               ),
@@ -78,7 +82,7 @@ class AddressesPage extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Errore: $e')),
+        error: (e, _) => Center(child: Text(humanizeError(e, context))),
       ),
     );
   }
@@ -422,15 +426,24 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
       final userId = client.auth.currentUser?.id;
       if (userId == null) return;
 
+      final street = _streetController.text.trim();
+      final city = _cityController.text.trim();
+      final postal = _postalCodeController.text.trim();
+
+      final geo = await GeocodingService()
+          .geocode('$street, $postal $city, Italia');
+
       final data = {
         'customer_id': userId,
         'label': _labelController.text.trim(),
-        'street': _streetController.text.trim(),
-        'city': _cityController.text.trim(),
-        'postal_code': _postalCodeController.text.trim(),
+        'street': street,
+        'city': city,
+        'postal_code': postal,
         'notes': _notesController.text.trim().isEmpty
             ? null
             : _notesController.text.trim(),
+        if (geo != null) 'latitude': geo.lat,
+        if (geo != null) 'longitude': geo.lng,
       };
 
       if (widget.address != null) {
@@ -446,7 +459,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore: $e')),
+          SnackBar(content: Text(humanizeError(e, context))),
         );
       }
     } finally {

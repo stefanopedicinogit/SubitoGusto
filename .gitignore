@@ -119,6 +119,8 @@ app.*.symbols
 !/dev/ci/**/Gemfile.lock
 
 .env
-claude_cloud.ps1
-CLAUDE.md
 .vercel
+.claude
+
+HOW_TO_SELL.md
+ListingFlippa.md

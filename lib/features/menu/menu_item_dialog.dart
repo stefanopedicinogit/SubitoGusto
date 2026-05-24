@@ -7,6 +7,7 @@ import 'dart:html' as html;
 import '../../core/theme/app_theme.dart';
 import '../../data/models/menu_item.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Dialog for creating or editing a menu item
 class MenuItemDialog extends ConsumerStatefulWidget {
@@ -147,12 +148,17 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
           .uploadBinary(
             path,
             _pickedImageBytes!,
-            fileOptions: FileOptions(contentType: contentType, upsert: true),
+            fileOptions: FileOptions(
+              contentType: contentType,
+              upsert: true,
+              cacheControl: '31536000',
+            ),
           );
 
       final supabaseUrl = Supabase.instance.client.rest.url
           .replaceAll('/rest/v1', '');
-      return '$supabaseUrl/storage/v1/object/public/tenant-assets/$path';
+      final version = DateTime.now().millisecondsSinceEpoch;
+      return '$supabaseUrl/storage/v1/object/public/tenant-assets/$path?v=$version';
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
@@ -162,8 +168,8 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
     if (!_formKey.currentState!.validate()) return;
     if (_categoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Seleziona una categoria'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).menuItemDialogSelectCategoryFirst),
           backgroundColor: AppColors.error,
         ),
       );
@@ -237,7 +243,7 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isEditing ? 'Piatto aggiornato' : 'Piatto creato',
+              isEditing ? AppLocalizations.of(context).menuItemDialogUpdated : AppLocalizations.of(context).menuItemDialogCreated,
             ),
             backgroundColor: AppColors.success,
           ),
@@ -265,21 +271,19 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Elimina Piatto'),
-        content: Text(
-          'Sei sicuro di voler eliminare "${widget.menuItem!.name}"?',
-        ),
+        title: Text(AppLocalizations.of(context).menuItemDialogDeleteConfirm),
+        content: Text('"${widget.menuItem!.name}"'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annulla'),
+            child: Text(AppLocalizations.of(context).commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.error,
             ),
-            child: const Text('Elimina'),
+            child: Text(AppLocalizations.of(context).commonDelete),
           ),
         ],
       ),
@@ -301,8 +305,8 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
       if (mounted) {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Piatto eliminato'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).menuItemDialogDeleted),
             backgroundColor: AppColors.success,
           ),
         );
@@ -340,7 +344,7 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
               child: Row(
                 children: [
                   Text(
-                    isEditing ? 'Modifica Piatto' : 'Nuovo Piatto',
+                    isEditing ? AppLocalizations.of(context).menuItemDialogEdit : AppLocalizations.of(context).menuItemDialogNew,
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const Spacer(),
@@ -368,8 +372,8 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                             flex: 2,
                             child: TextFormField(
                               controller: _nameController,
-                              decoration: const InputDecoration(
-                                labelText: 'Nome *',
+                              decoration: InputDecoration(
+                                labelText: AppLocalizations.of(context).menuItemDialogName,
                                 hintText: 'Es: Spaghetti Carbonara',
                               ),
                               validator: (value) {
@@ -387,8 +391,8 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                               data: (categories) => DropdownButtonFormField<String>(
                                 value: _categoryId,
                                 isExpanded: true,
-                                decoration: const InputDecoration(
-                                  labelText: 'Categoria *',
+                                decoration: InputDecoration(
+                                  labelText: AppLocalizations.of(context).menuItemDialogCategory,
                                 ),
                                 items: categories.map((cat) {
                                   return DropdownMenuItem(
@@ -413,9 +417,9 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                       // Description
                       TextFormField(
                         controller: _descriptionController,
-                        decoration: const InputDecoration(
-                          labelText: 'Descrizione',
-                          hintText: 'Descrizione del piatto...',
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).menuItemDialogDescription,
+                          hintText: AppLocalizations.of(context).menuItemDialogDescriptionHint,
                         ),
                         maxLines: 3,
                       ),
@@ -426,18 +430,18 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                           Expanded(
                             child: TextFormField(
                               controller: _priceController,
-                              decoration: const InputDecoration(
-                                labelText: 'Prezzo *',
+                              decoration: InputDecoration(
+                                labelText: AppLocalizations.of(context).menuItemDialogPrice,
                                 prefixText: '€ ',
                               ),
                               keyboardType:
                                   const TextInputType.numberWithOptions(decimal: true),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Inserisci il prezzo';
+                                  return AppLocalizations.of(context).menuItemDialogPriceRequired;
                                 }
                                 if (double.tryParse(value) == null) {
-                                  return 'Prezzo non valido';
+                                  return AppLocalizations.of(context).menuItemDialogPriceInvalid;
                                 }
                                 return null;
                               },
@@ -447,8 +451,8 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                           Expanded(
                             child: TextFormField(
                               controller: _prepTimeController,
-                              decoration: const InputDecoration(
-                                labelText: 'Tempo prep. (min)',
+                              decoration: InputDecoration(
+                                labelText: AppLocalizations.of(context).menuItemDialogPrepTime,
                                 hintText: '15',
                               ),
                               keyboardType: TextInputType.number,
@@ -458,8 +462,8 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                           Expanded(
                             child: TextFormField(
                               controller: _caloriesController,
-                              decoration: const InputDecoration(
-                                labelText: 'Calorie',
+                              decoration: InputDecoration(
+                                labelText: AppLocalizations.of(context).menuItemDialogCalories,
                                 hintText: '450',
                               ),
                               keyboardType: TextInputType.number,
@@ -478,7 +482,7 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Immagine',
+                                  AppLocalizations.of(context).menuItemDialogImage,
                                   style: Theme.of(context).textTheme.titleSmall,
                                 ),
                                 const SizedBox(height: AppSpacing.sm),
@@ -520,7 +524,7 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                                                   child: CircularProgressIndicator(strokeWidth: 2),
                                                 )
                                               : const Icon(Icons.upload, size: 18),
-                                          label: Text(_pickedImageBytes != null ? 'Cambia foto' : 'Carica foto'),
+                                          label: Text(_pickedImageBytes != null ? AppLocalizations.of(context).menuItemDialogChangePhoto : AppLocalizations.of(context).menuItemDialogUploadPhoto),
                                         ),
                                         if (_pickedImageBytes != null) ...[
                                           const SizedBox(height: AppSpacing.xs),
@@ -537,7 +541,7 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                                               setState(() => _imageUrlController.clear());
                                             },
                                             icon: const Icon(Icons.delete_outline, size: 16, color: AppColors.error),
-                                            label: const Text('Rimuovi', style: TextStyle(color: AppColors.error, fontSize: 12)),
+                                            label: Text(AppLocalizations.of(context).menuItemDialogRemove, style: const TextStyle(color: AppColors.error, fontSize: 12)),
                                           ),
                                         ],
                                       ],
@@ -551,8 +555,8 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                           Expanded(
                             child: TextFormField(
                               controller: _sortOrderController,
-                              decoration: const InputDecoration(
-                                labelText: 'Ordine',
+                              decoration: InputDecoration(
+                                labelText: AppLocalizations.of(context).menuItemDialogOrder,
                                 hintText: '0',
                               ),
                               keyboardType: TextInputType.number,
@@ -563,7 +567,7 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                       const SizedBox(height: AppSpacing.lg),
                       // Tags
                       Text(
-                        'Tag',
+                        AppLocalizations.of(context).menuItemDialogTags,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: AppSpacing.sm),
@@ -592,7 +596,7 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                       const SizedBox(height: AppSpacing.lg),
                       // Allergens
                       Text(
-                        'Allergeni',
+                        AppLocalizations.of(context).menuItemDialogAllergens,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: AppSpacing.sm),
@@ -624,7 +628,7 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                         children: [
                           Expanded(
                             child: SwitchListTile(
-                              title: const Text('Disponibile'),
+                              title: Text(AppLocalizations.of(context).menuItemDialogAvailable),
                               value: _isAvailable,
                               onChanged: (value) =>
                                   setState(() => _isAvailable = value),
@@ -633,7 +637,7 @@ class _MenuItemDialogState extends ConsumerState<MenuItemDialog> {
                           ),
                           Expanded(
                             child: SwitchListTile(
-                              title: const Text('Attivo'),
+                              title: Text(AppLocalizations.of(context).menuItemDialogActive),
                               value: _isActive,
                               onChanged: (value) =>
                                   setState(() => _isActive = value),

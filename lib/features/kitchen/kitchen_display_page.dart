@@ -7,6 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/models/order.dart';
 import '../../data/models/order_item.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Kitchen Display Page - Fullscreen view optimized for kitchen monitors
 class KitchenDisplayPage extends ConsumerStatefulWidget {
@@ -172,11 +173,11 @@ class _KitchenDisplayPageState extends ConsumerState<KitchenDisplayPage> {
           ),
           const Spacer(),
           // Legend
-          _buildLegendChip('Confermato', AppColors.statusConfirmed),
+          _buildLegendChip(AppLocalizations.of(context).statusConfirmed, AppColors.statusConfirmed),
           const SizedBox(width: AppSpacing.md),
-          _buildLegendChip('In preparazione', AppColors.statusPreparing),
+          _buildLegendChip(AppLocalizations.of(context).statusPreparing, AppColors.statusPreparing),
           const SizedBox(width: AppSpacing.md),
-          _buildLegendChip('Pronto', AppColors.statusReady),
+          _buildLegendChip(AppLocalizations.of(context).statusReadyForDelivery, AppColors.statusReady),
           const SizedBox(width: AppSpacing.lg),
           // Clock
           StreamBuilder(
@@ -234,7 +235,7 @@ class _KitchenDisplayPageState extends ConsumerState<KitchenDisplayPage> {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'Nessun ordine in coda',
+            AppLocalizations.of(context).kitchenEmpty,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: AppColors.darkText,
                 ),
@@ -480,7 +481,7 @@ class _KitchenOrderCard extends ConsumerWidget {
                   if (items.isEmpty) {
                     return Center(
                       child: Text(
-                        'Nessun piatto',
+                        AppLocalizations.of(context).menuMgmtEmptyItems,
                         style: TextStyle(color: AppColors.darkTextSecondary),
                       ),
                     );
@@ -583,14 +584,14 @@ class _OrderItemRow extends StatelessWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: AppColors.burgundy.withValues(alpha: 0.2),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(AppRadius.sm),
           ),
           alignment: Alignment.center,
           child: Text(
             '${item.quantity}x',
-            style: const TextStyle(
-              color: AppColors.burgundyLight,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),

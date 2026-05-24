@@ -14,7 +14,7 @@ CODICE_BACKUP_STRIPE_MARC=${CODICE_BACKUP_STRIPE_MARC}
 EOF
 
 # Install Flutter SDK
-FLUTTER_VERSION="3.41.6"
+FLUTTER_VERSION="3.41.6" #3.41.9 good either
 git clone --depth 1 --branch "$FLUTTER_VERSION" https://github.com/flutter/flutter.git /tmp/flutter
 export PATH="/tmp/flutter/bin:/tmp/flutter/bin/cache/dart-sdk/bin:$PATH"
 

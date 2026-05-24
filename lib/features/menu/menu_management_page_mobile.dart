@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/category.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'category_dialog.dart';
 import 'menu_item_dialog.dart';
 
@@ -14,6 +15,7 @@ class MenuManagementPageMobile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Use stream for realtime updates
     final categoriesAsync = ref.watch(categoriesStreamProvider);
+    final l = AppLocalizations.of(context);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -34,7 +36,7 @@ class MenuManagementPageMobile extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Text(
-                    'Nessuna categoria',
+                    l.menuMgmtEmptyCategories,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -48,7 +50,7 @@ class MenuManagementPageMobile extends ConsumerWidget {
                       );
                     },
                     icon: const Icon(Icons.add),
-                    label: const Text('Aggiungi categoria'),
+                    label: Text(l.menuMgmtAddCategory),
                   ),
                 ],
               ),
@@ -129,7 +131,7 @@ class _CategoryCard extends ConsumerWidget {
                         );
                       },
                       icon: const Icon(Icons.add),
-                      label: const Text('Aggiungi piatto'),
+                      label: Text(AppLocalizations.of(context).menuMgmtAddItem),
                     ),
                   ),
                 );
@@ -177,7 +179,7 @@ class _CategoryCard extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(AppRadius.sm),
                               ),
                               child: Text(
-                                'Esaurito',
+                                AppLocalizations.of(context).menuMgmtUnavailable,
                                 style: Theme.of(context)
                                     .textTheme
                                     .labelSmall
@@ -218,7 +220,7 @@ class _CategoryCard extends ConsumerWidget {
                         );
                       },
                       icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Aggiungi piatto'),
+                      label: Text(AppLocalizations.of(context).menuMgmtAddItem),
                     ),
                   ),
                 ],

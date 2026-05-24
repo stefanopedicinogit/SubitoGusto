@@ -1,7 +1,9 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/order.dart';
 import '../../data/models/order_item.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Date range for analytics
 enum AnalyticsDateRange {
@@ -12,16 +14,17 @@ enum AnalyticsDateRange {
 }
 
 extension AnalyticsDateRangeExtension on AnalyticsDateRange {
-  String get label {
+  String label(BuildContext context) {
+    final l = AppLocalizations.of(context);
     switch (this) {
       case AnalyticsDateRange.today:
-        return 'Oggi';
+        return l.analyticsPeriodToday;
       case AnalyticsDateRange.week:
-        return 'Settimana';
+        return l.analyticsPeriodWeek;
       case AnalyticsDateRange.month:
-        return 'Mese';
+        return l.analyticsPeriodMonth;
       case AnalyticsDateRange.year:
-        return 'Anno';
+        return l.analyticsPeriodYear;
     }
   }
 

@@ -6,6 +6,7 @@ import '../../data/models/order.dart';
 import '../../data/models/delivery_order.dart';
 import '../../data/models/table.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'order_detail_dialog.dart';
 
 /// Orders page for mobile
@@ -44,14 +45,14 @@ class _OrdersPageMobileState extends ConsumerState<OrdersPageMobile>
           child: TabBar(
             controller: _tabController,
             tabs: [
-              const Tab(text: 'Sala'),
+              Tab(text: AppLocalizations.of(context).ordersStaffTabDineIn),
               Tab(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(Icons.delivery_dining, size: 18),
                     const SizedBox(width: 6),
-                    const Text('Consegne'),
+                    Text(AppLocalizations.of(context).ordersStaffTabDelivery),
                     deliveryOrdersAsync.when(
                       data: (orders) {
                         final active = orders.where((o) => o.isActive).length;
@@ -61,7 +62,7 @@ class _OrdersPageMobileState extends ConsumerState<OrdersPageMobile>
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppColors.burgundy,
+                            color: Theme.of(context).colorScheme.primary,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
@@ -645,8 +646,8 @@ class _DeliveryOrderCardMobileState
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.delivery_dining,
-                        size: 18, color: AppColors.burgundy),
+                    Icon(Icons.delivery_dining,
+                        size: 18, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(width: 6),
                     Text(
                       '#${order.orderNumber}',
@@ -711,7 +712,7 @@ class _DeliveryOrderCardMobileState
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  order.isPaid ? 'Pagato' : 'In attesa',
+                  order.isPaid ? AppLocalizations.of(context).ordersStaffPaymentPaid : AppLocalizations.of(context).ordersStaffPaymentPending,
                   style: TextStyle(
                     fontSize: 12,
                     color: order.isPaid
@@ -844,20 +845,20 @@ class _DeliveryStatusChip extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: _getColor().withValues(alpha: 0.2),
+        color: _getColor(context).withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(AppRadius.full),
       ),
       child: Text(
         _getLabel(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: _getColor(),
+              color: _getColor(context),
               fontWeight: FontWeight.w600,
             ),
       ),
     );
   }
 
-  Color _getColor() {
+  Color _getColor(BuildContext context) {
     switch (status) {
       case 'pending':
         return AppColors.statusPending;
@@ -868,7 +869,7 @@ class _DeliveryStatusChip extends StatelessWidget {
       case 'ready_for_delivery':
         return AppColors.statusReady;
       case 'out_for_delivery':
-        return AppColors.burgundy;
+        return Theme.of(context).colorScheme.primary;
       case 'delivered':
         return AppColors.success;
       case 'cancelled':

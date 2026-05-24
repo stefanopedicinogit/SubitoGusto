@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/order_status_label.dart';
 import '../../data/models/order.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Dashboard page for desktop
 class DashboardPage extends ConsumerWidget {
@@ -20,6 +22,7 @@ class DashboardPage extends ConsumerWidget {
     );
     final currentTenantId = ref.watch(currentTenantIdProvider);
     final authState = ref.watch(supabaseAuthProvider);
+    final l = AppLocalizations.of(context);
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -76,18 +79,18 @@ class DashboardPage extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Test Vista Cliente',
+                          l.dashboardTestCustomerView,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         Text(
-                          'Simula la scansione QR di un tavolo',
+                          l.dashboardTestCustomerViewSubtitle,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
                     ),
                   ),
                   DropdownButton<String>(
-                    hint: const Text('Seleziona tavolo'),
+                    hint: Text(l.dashboardSelectTable),
                     items: const [
                       DropdownMenuItem(value: 'TBL001', child: Text('Tavolo 1')),
                       DropdownMenuItem(value: 'TBL002', child: Text('Tavolo 2')),
@@ -113,7 +116,7 @@ class DashboardPage extends ConsumerWidget {
             children: [
               Expanded(
                 child: _StatCard(
-                  title: 'Ordini Attivi',
+                  title: l.dashboardActiveOrders,
                   value: ordersAsync.when(
                     data: (orders) => orders.length.toString(),
                     loading: () => '-',
@@ -126,7 +129,7 @@ class DashboardPage extends ConsumerWidget {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: _StatCard(
-                  title: 'In Preparazione',
+                  title: l.statusPreparing,
                   value: ordersAsync.when(
                     data: (orders) =>
                         orders.where((o) => o.isPreparing).length.toString(),
@@ -140,7 +143,7 @@ class DashboardPage extends ConsumerWidget {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: _StatCard(
-                  title: 'Pronti',
+                  title: l.statusReadyForDelivery,
                   value: ordersAsync.when(
                     data: (orders) =>
                         orders.where((o) => o.isReady).length.toString(),
@@ -154,7 +157,7 @@ class DashboardPage extends ConsumerWidget {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: _StatCard(
-                  title: 'In Attesa',
+                  title: l.statusPending,
                   value: ordersAsync.when(
                     data: (orders) =>
                         orders.where((o) => o.isPending).length.toString(),
@@ -180,13 +183,13 @@ class DashboardPage extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Ordini Recenti',
+                          l.dashboardRecentOrders,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         TextButton.icon(
                           onPressed: () {},
                           icon: const Icon(Icons.arrow_forward),
-                          label: const Text('Vedi tutti'),
+                          label: Text(l.dashboardSeeAll),
                         ),
                       ],
                     ),
@@ -195,18 +198,18 @@ class DashboardPage extends ConsumerWidget {
                       child: ordersAsync.when(
                         data: (orders) {
                           if (orders.isEmpty) {
-                            return const Center(
+                            return Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     Icons.receipt_long_outlined,
                                     size: 64,
                                     color: AppColors.textSecondary,
                                   ),
-                                  SizedBox(height: AppSpacing.md),
+                                  const SizedBox(height: AppSpacing.md),
                                   Text(
-                                    'Nessun ordine attivo',
+                                    AppLocalizations.of(context).dashboardNoOrders,
                                     style: TextStyle(
                                       color: AppColors.textSecondary,
                                     ),
@@ -231,7 +234,7 @@ class DashboardPage extends ConsumerWidget {
                                   ),
                                 ),
                                 title: Text(order.orderNumber),
-                                subtitle: Text(order.statusDisplayName),
+                                subtitle: Text(localizedOrderStatus(context, order.status)),
                                 trailing: Text(
                                   order.formatTotal(),
                                   style: Theme.of(context)

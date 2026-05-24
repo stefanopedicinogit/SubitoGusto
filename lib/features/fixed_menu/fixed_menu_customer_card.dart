@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/fixed_menu.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'fixed_menu_selection_sheet.dart';
 
 /// Card displaying a fixed menu for customers
@@ -118,7 +119,9 @@ class FixedMenuCustomerCard extends ConsumerWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              menu.availableFor == 'lunch' ? 'Pranzo' : 'Cena',
+                              menu.availableFor == 'lunch'
+                                  ? AppLocalizations.of(context).fixedMenuDialogLunch
+                                  : AppLocalizations.of(context).fixedMenuDialogDinner,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 11,
@@ -216,7 +219,7 @@ class FixedMenuCustomerCard extends ConsumerWidget {
                     child: FilledButton.icon(
                       onPressed: () => _showSelectionSheet(context),
                       icon: const Icon(Icons.touch_app, size: 18),
-                      label: const Text('Scegli le portate'),
+                      label: Text(AppLocalizations.of(context).fixedMenuCardChooseCourses),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                       ),

@@ -1,10 +1,11 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/language_switcher.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Consumer login page with email/password and social login
 class ConsumerLoginPage extends ConsumerStatefulWidget {
@@ -44,7 +45,14 @@ class _ConsumerLoginPageState extends ConsumerState<ConsumerLoginPage> {
       );
 
       if (mounted) {
-        context.go('/marketplace');
+        // If we were sent here from a QR-flow page (returnTo query param),
+        // go back there. Otherwise default to the marketplace.
+        final returnTo = GoRouterState.of(
+          context,
+        ).uri.queryParameters['returnTo'];
+        context.go(
+          (returnTo != null && returnTo.isNotEmpty) ? returnTo : '/marketplace',
+        );
       }
     } on AuthException catch (e) {
       setState(() {
@@ -61,299 +69,233 @@ class _ConsumerLoginPageState extends ConsumerState<ConsumerLoginPage> {
     }
   }
 
-  Future<void> _handleGoogleLogin() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      await Supabase.instance.client.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: kIsWeb ? null : 'io.supabase.subitogusto://login-callback/',
-      );
-    } on AuthException catch (e) {
-      setState(() {
-        _errorMessage = e.message;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Errore con Google. Riprova.';
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _handleAppleLogin() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      await Supabase.instance.client.auth.signInWithOAuth(
-        OAuthProvider.apple,
-        redirectTo: kIsWeb ? null : 'io.supabase.subitogusto://login-callback/',
-      );
-    } on AuthException catch (e) {
-      setState(() {
-        _errorMessage = e.message;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Errore con Apple. Riprova.';
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: AppSpacing.xl),
-                // Logo
-                Center(
-                  child: Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: primaryColor,
-                      borderRadius: BorderRadius.circular(AppRadius.xl),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.delivery_dining,
-                        color: Colors.white,
-                        size: 40,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Center(
-                  child: Text(
-                    'SubitoGusto',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: primaryColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Center(
-                  child: Text(
-                    'Ordina a domicilio dai migliori ristoranti',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xxl),
-                // Error message
-                if (_errorMessage != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: AppColors.errorLight,
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.error_outline, color: AppColors.error),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: const TextStyle(color: AppColors.error),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                ],
-                // Social login buttons
-                _SocialLoginButton(
-                  onPressed: _isLoading ? null : _handleGoogleLogin,
-                  icon: Icons.g_mobiledata,
-                  label: 'Continua con Google',
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _SocialLoginButton(
-                  onPressed: _isLoading ? null : _handleAppleLogin,
-                  icon: Icons.apple,
-                  label: 'Continua con Apple',
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                // Divider
-                Row(
-                  children: [
-                    const Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                      child: Text(
-                        'oppure',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                    const Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                // Email field
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Inserisci la tua email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Inserisci un\'email valida';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppSpacing.md),
-                // Password field
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outlined),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                      ),
-                      onPressed: () {
-                        setState(() => _obscurePassword = !_obscurePassword);
-                      },
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Inserisci la tua password';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                // Login button
-                SizedBox(
-                  height: 52,
-                  child: FilledButton(
-                    onPressed: _isLoading ? null : _handleLogin,
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isDesktop = constraints.maxWidth >= 600;
+                  final maxFormWidth = isDesktop
+                      ? constraints.maxWidth * 0.7
+                      : constraints.maxWidth;
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxFormWidth),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const SizedBox(height: AppSpacing.xl),
+                            // Logo
+                            Center(
+                              child: Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  color: primaryColor,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.xl,
+                                  ),
+                                ),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.delivery_dining,
+                                    color: Colors.white,
+                                    size: 40,
+                                  ),
+                                ),
+                              ),
                             ),
-                          )
-                        : const Text('Accedi'),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                // Register link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Non hai un account?'),
-                    TextButton(
-                      onPressed: () => context.go('/consumer/register'),
-                      child: const Text('Registrati'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                // Staff login link
-                Center(
-                  child: TextButton(
-                    onPressed: () => context.go('/login'),
-                    child: Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: 'Sei un ristoratore? ',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 13,
+                            const SizedBox(height: AppSpacing.md),
+                            Center(
+                              child: Text(
+                                'SubitoGusto',
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(
+                                      color: primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
                             ),
-                          ),
-                          TextSpan(
-                            text: 'Accedi qui',
-                            style: TextStyle(
-                              color: AppColors.burgundy,
-                              fontSize: 13,
+                            const SizedBox(height: AppSpacing.xs),
+                            Center(
+                              child: Text(
+                                l.consumerLoginSubtitle,
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: AppColors.textSecondary),
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: AppSpacing.xxl),
+                            // Error message
+                            if (_errorMessage != null) ...[
+                              Container(
+                                padding: const EdgeInsets.all(AppSpacing.md),
+                                decoration: BoxDecoration(
+                                  color: AppColors.errorLight,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.sm,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.error_outline,
+                                      color: AppColors.error,
+                                    ),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Expanded(
+                                      child: Text(
+                                        _errorMessage!,
+                                        style: const TextStyle(
+                                          color: AppColors.error,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                            ],
+                            // Email field
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: InputDecoration(
+                                labelText: l.consumerLoginEmailLabel,
+                                prefixIcon: const Icon(Icons.email_outlined),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return l.validationRequired;
+                                }
+                                if (!value.contains('@')) {
+                                  return l.validationEmail;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            // Password field
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: _obscurePassword,
+                              decoration: InputDecoration(
+                                labelText: l.consumerLoginPasswordLabel,
+                                prefixIcon: const Icon(Icons.lock_outlined),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                  ),
+                                  onPressed: () {
+                                    setState(
+                                      () =>
+                                          _obscurePassword = !_obscurePassword,
+                                    );
+                                  },
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return l.validationRequired;
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: AppSpacing.xl),
+                            // Login button
+                            SizedBox(
+                              height: 52,
+                              child: FilledButton(
+                                onPressed: _isLoading ? null : _handleLogin,
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : Text(l.consumerLoginSubmit),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xl),
+                            // Register link
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(l.consumerLoginNoAccount),
+                                TextButton(
+                                  onPressed: () {
+                                    // Preserve returnTo across login ↔ register.
+                                    final returnTo = GoRouterState.of(
+                                      context,
+                                    ).uri.queryParameters['returnTo'];
+                                    final path =
+                                        returnTo == null || returnTo.isEmpty
+                                        ? '/consumer/register'
+                                        : '/consumer/register?returnTo=${Uri.encodeComponent(returnTo)}';
+                                    context.go(path);
+                                  },
+                                  child: Text(l.consumerLoginSignUp),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            // Staff login link
+                            Center(
+                              child: TextButton(
+                                onPressed: () => context.go('/login'),
+                                child: Text.rich(
+                                  TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: 'Sei un ristoratore? ',
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: 'Accedi qui',
+                                        style: TextStyle(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xl),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              ],
+                  );
+                },
+              ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Reusable social login button
-class _SocialLoginButton extends StatelessWidget {
-  final VoidCallback? onPressed;
-  final IconData icon;
-  final String label;
-
-  const _SocialLoginButton({
-    required this.onPressed,
-    required this.icon,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 52,
-      child: OutlinedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 24),
-        label: Text(label),
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: Colors.grey.shade300),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-          ),
+            const Positioned(
+              top: AppSpacing.md,
+              right: AppSpacing.md,
+              child: LanguageSwitcher(),
+            ),
+          ],
         ),
       ),
     );

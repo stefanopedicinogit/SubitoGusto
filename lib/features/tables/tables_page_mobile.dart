@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/table.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'table_dialog.dart';
 
 /// Tables management page for mobile
@@ -14,51 +15,87 @@ class TablesPageMobile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Use stream for realtime updates
     final tablesAsync = ref.watch(tablesStreamProvider);
+    final l = AppLocalizations.of(context);
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        ref.invalidate(tablesStreamProvider);
-      },
-      child: tablesAsync.when(
-        data: (tables) {
-          if (tables.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.table_restaurant,
-                    size: 64,
-                    color: AppColors.textSecondary.withValues(alpha: 0.5),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    'Nessun tavolo',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return GridView.builder(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: AppSpacing.md,
-              crossAxisSpacing: AppSpacing.md,
-              childAspectRatio: 0.85,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            AppSpacing.sm,
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => const TableDialog(),
+                );
+              },
+              icon: const Icon(Icons.add),
+              label: Text(l.tablesAddTable),
             ),
-            itemCount: tables.length,
-            itemBuilder: (context, index) =>
-                _TableCardMobile(table: tables[index]),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Errore: $e')),
-      ),
+          ),
+        ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(tablesStreamProvider);
+            },
+            child: tablesAsync.when(
+              data: (tables) {
+                if (tables.isEmpty) {
+                  return ListView(
+                    children: [
+                      const SizedBox(height: 120),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.table_restaurant,
+                            size: 64,
+                            color:
+                                AppColors.textSecondary.withValues(alpha: 0.5),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            l.tablesEmpty,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                }
+
+                return GridView.builder(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: AppSpacing.md,
+                    crossAxisSpacing: AppSpacing.md,
+                    childAspectRatio: 0.85,
+                  ),
+                  itemCount: tables.length,
+                  itemBuilder: (context, index) =>
+                      _TableCardMobile(table: tables[index]),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Errore: $e')),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -131,7 +168,7 @@ class _TableCardMobile extends StatelessWidget {
               const Spacer(),
               // Status text
               Text(
-                _getStatusLabel(),
+                _getStatusLabel(context),
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: _getStatusColor(),
                       fontWeight: FontWeight.w600,
@@ -157,14 +194,15 @@ class _TableCardMobile extends StatelessWidget {
     }
   }
 
-  String _getStatusLabel() {
+  String _getStatusLabel(BuildContext context) {
+    final l = AppLocalizations.of(context);
     switch (table.status) {
       case 'available':
-        return 'Libero';
+        return l.tablesStatusFree;
       case 'occupied':
-        return 'Occupato';
+        return l.tablesStatusOccupied;
       case 'reserved':
-        return 'Prenotato';
+        return l.tablesStatusReserved;
       default:
         return table.status;
     }
@@ -258,7 +296,7 @@ class _TableCardMobile extends StatelessWidget {
                           );
                         },
                         icon: const Icon(Icons.edit),
-                        label: const Text('Modifica'),
+                        label: Text(AppLocalizations.of(context).commonEdit),
                       ),
                     ),
                   ],

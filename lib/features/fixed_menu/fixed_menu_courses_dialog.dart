@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/error_messages.dart';
 import '../../data/models/fixed_menu.dart';
 import '../../data/models/menu_item.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Dialog for managing courses and choices of a fixed menu
 class FixedMenuCoursesDialog extends ConsumerStatefulWidget {
@@ -41,7 +43,7 @@ class _FixedMenuCoursesDialogState extends ConsumerState<FixedMenuCoursesDialog>
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
-                        'Gestisci portate e scelte',
+                        AppLocalizations.of(context).fixedMenuCoursesTitle,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -52,7 +54,7 @@ class _FixedMenuCoursesDialogState extends ConsumerState<FixedMenuCoursesDialog>
                 FilledButton.icon(
                   onPressed: () => _showAddCourseDialog(),
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Aggiungi Portata'),
+                  label: Text(AppLocalizations.of(context).fixedMenuCoursesAdd),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 IconButton(
@@ -86,7 +88,7 @@ class _FixedMenuCoursesDialogState extends ConsumerState<FixedMenuCoursesDialog>
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text('Errore: $e')),
+                error: (e, _) => Center(child: Text(humanizeError(e, context))),
               ),
             ),
           ],
@@ -96,6 +98,7 @@ class _FixedMenuCoursesDialogState extends ConsumerState<FixedMenuCoursesDialog>
   }
 
   Widget _buildEmptyState() {
+    final l = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -107,14 +110,14 @@ class _FixedMenuCoursesDialogState extends ConsumerState<FixedMenuCoursesDialog>
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'Nessuna portata',
+            l.fixedMenuCoursesEmpty,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppColors.textSecondary,
                 ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Aggiungi portate come Primo, Secondo, Dolce...',
+            l.fixedMenuCoursesEmptyHint,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -148,18 +151,18 @@ class _FixedMenuCoursesDialogState extends ConsumerState<FixedMenuCoursesDialog>
   Future<void> _deleteCourse(FixedMenuCourse course) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Elimina Portata'),
-        content: Text('Eliminare "${course.name}" e tutte le sue scelte?'),
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(AppLocalizations.of(dialogCtx).fixedMenuCoursesDeleteTitle),
+        content: Text(AppLocalizations.of(dialogCtx).fixedMenuCoursesDeleteConfirm(course.name)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annulla'),
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: Text(AppLocalizations.of(dialogCtx).commonCancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Elimina'),
+            child: Text(AppLocalizations.of(dialogCtx).commonDelete),
           ),
         ],
       ),
@@ -174,7 +177,7 @@ class _FixedMenuCoursesDialogState extends ConsumerState<FixedMenuCoursesDialog>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text(humanizeError(e, context)), backgroundColor: AppColors.error),
         );
       }
     }
@@ -206,7 +209,7 @@ class _FixedMenuCoursesDialogState extends ConsumerState<FixedMenuCoursesDialog>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text(humanizeError(e, context)), backgroundColor: AppColors.error),
         );
       }
     }
@@ -228,6 +231,7 @@ class _CourseCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final choicesAsync = ref.watch(fixedMenuChoicesProvider(course.id));
 
     return Card(
@@ -252,14 +256,14 @@ class _CourseCard extends ConsumerWidget {
                   vertical: 2,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.burgundy.withValues(alpha: 0.1),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
-                  'Obbligatorio',
+                  l.fixedMenuCoursesRequired,
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.burgundy,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -267,11 +271,11 @@ class _CourseCard extends ConsumerWidget {
         ),
         subtitle: choicesAsync.when(
           data: (choices) => Text(
-            '${choices.length} scelte disponibili',
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            l.fixedMenuCoursesChoicesAvailable(choices.length),
+            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
           loading: () => const Text('...'),
-          error: (_, __) => const Text('Errore'),
+          error: (_, __) => const Text('!'),
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -279,12 +283,12 @@ class _CourseCard extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.edit, size: 20),
               onPressed: onEdit,
-              tooltip: 'Modifica',
+              tooltip: l.tooltipEdit,
             ),
             IconButton(
-              icon: Icon(Icons.delete, size: 20, color: AppColors.error),
+              icon: const Icon(Icons.delete, size: 20, color: AppColors.error),
               onPressed: onDelete,
-              tooltip: 'Elimina',
+              tooltip: l.tooltipDelete,
             ),
           ],
         ),
@@ -300,7 +304,7 @@ class _CourseCard extends ConsumerWidget {
             ),
             error: (e, _) => Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
-              child: Text('Errore: $e'),
+              child: Text(humanizeError(e, context)),
             ),
           ),
         ],
@@ -321,6 +325,7 @@ class _ChoicesList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
@@ -335,7 +340,7 @@ class _ChoicesList extends ConsumerWidget {
           OutlinedButton.icon(
             onPressed: () => _showAddChoiceDialog(context, ref),
             icon: const Icon(Icons.add, size: 18),
-            label: const Text('Aggiungi Scelta'),
+            label: Text(l.fixedMenuChoicesAdd),
             style: OutlinedButton.styleFrom(
               visualDensity: VisualDensity.compact,
             ),
@@ -346,8 +351,8 @@ class _ChoicesList extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Text(
-                'Nessuna scelta. Aggiungi piatti dal menu.',
-                style: TextStyle(
+                l.fixedMenuChoicesEmpty,
+                style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontStyle: FontStyle.italic,
                 ),
@@ -382,7 +387,7 @@ class _ChoicesList extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text(humanizeError(e, context)), backgroundColor: AppColors.error),
         );
       }
     }
@@ -433,9 +438,9 @@ class _ChoiceTile extends StatelessWidget {
               ),
             ),
           IconButton(
-            icon: Icon(Icons.close, size: 18, color: AppColors.error),
+            icon: const Icon(Icons.close, size: 18, color: AppColors.error),
             onPressed: onDelete,
-            tooltip: 'Rimuovi',
+            tooltip: AppLocalizations.of(context).fixedMenuChoicesRemove,
           ),
         ],
       ),
@@ -485,8 +490,9 @@ class _CourseEditDialogState extends ConsumerState<_CourseEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text(isEditing ? 'Modifica Portata' : 'Nuova Portata'),
+      title: Text(isEditing ? l.fixedMenuCoursesEditCourse : l.fixedMenuCoursesNewCourse),
       content: SizedBox(
         width: 400,
         child: Form(
@@ -496,24 +502,24 @@ class _CourseEditDialogState extends ConsumerState<_CourseEditDialog> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Nome *',
-                  hintText: 'es. Primo, Secondo, Dolce',
+                decoration: InputDecoration(
+                  labelText: l.fixedMenuCoursesNameLabel,
+                  hintText: l.fixedMenuCoursesNameHint,
                 ),
-                validator: (v) => v?.isEmpty == true ? 'Obbligatorio' : null,
+                validator: (v) => v?.isEmpty == true ? l.fixedMenuCoursesRequired : null,
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Descrizione',
-                  hintText: 'Descrizione opzionale',
+                decoration: InputDecoration(
+                  labelText: l.fixedMenuCoursesDescription,
+                  hintText: l.fixedMenuCoursesDescriptionHint,
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
               SwitchListTile(
-                title: const Text('Selezione obbligatoria'),
-                subtitle: const Text('Il cliente deve scegliere'),
+                title: Text(l.fixedMenuCoursesRequiredToggle),
+                subtitle: Text(l.fixedMenuCoursesRequiredToggleSub),
                 value: _isRequired,
                 onChanged: (v) => setState(() => _isRequired = v),
                 contentPadding: EdgeInsets.zero,
@@ -525,7 +531,7 @@ class _CourseEditDialogState extends ConsumerState<_CourseEditDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
+          child: Text(l.commonCancel),
         ),
         FilledButton(
           onPressed: _isLoading ? null : _save,
@@ -534,7 +540,7 @@ class _CourseEditDialogState extends ConsumerState<_CourseEditDialog> {
                   width: 20, height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text(isEditing ? 'Salva' : 'Crea'),
+              : Text(isEditing ? l.commonSave : l.tableDialogCreate),
         ),
       ],
     );
@@ -571,7 +577,7 @@ class _CourseEditDialogState extends ConsumerState<_CourseEditDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text(humanizeError(e, context)), backgroundColor: AppColors.error),
         );
       }
     } finally {
@@ -611,10 +617,11 @@ class _AddChoiceDialogState extends ConsumerState<_AddChoiceDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final menuItemsAsync = ref.watch(menuItemsProvider);
 
     return AlertDialog(
-      title: const Text('Aggiungi Scelta'),
+      title: Text(l.fixedMenuChoicesAdd),
       content: SizedBox(
         width: 500,
         height: 400,
@@ -623,9 +630,9 @@ class _AddChoiceDialogState extends ConsumerState<_AddChoiceDialog> {
           children: [
             // Search
             TextField(
-              decoration: const InputDecoration(
-                hintText: 'Cerca piatto...',
-                prefixIcon: Icon(Icons.search),
+              decoration: InputDecoration(
+                hintText: l.fixedMenuChoicesSearchHint,
+                prefixIcon: const Icon(Icons.search),
               ),
               onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
             ),
@@ -646,8 +653,8 @@ class _AddChoiceDialogState extends ConsumerState<_AddChoiceDialog> {
                   if (filtered.isEmpty) {
                     return Center(
                       child: Text(
-                        'Nessun piatto disponibile',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        l.fixedMenuChoicesNoItemsAvailable,
+                        style: const TextStyle(color: AppColors.textSecondary),
                       ),
                     );
                   }
@@ -660,10 +667,10 @@ class _AddChoiceDialogState extends ConsumerState<_AddChoiceDialog> {
 
                       return ListTile(
                         selected: isSelected,
-                        selectedTileColor: AppColors.burgundy.withValues(alpha: 0.1),
+                        selectedTileColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                         leading: Icon(
                           isSelected ? Icons.check_circle : Icons.restaurant,
-                          color: isSelected ? AppColors.burgundy : null,
+                          color: isSelected ? Theme.of(context).colorScheme.primary : null,
                         ),
                         title: Text(item.name),
                         subtitle: Text('€${item.price.toStringAsFixed(2)}'),
@@ -673,7 +680,7 @@ class _AddChoiceDialogState extends ConsumerState<_AddChoiceDialog> {
                   );
                 },
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text('Errore: $e')),
+                error: (e, _) => Center(child: Text(humanizeError(e, context))),
               ),
             ),
             const Divider(),
@@ -684,8 +691,8 @@ class _AddChoiceDialogState extends ConsumerState<_AddChoiceDialog> {
                   Expanded(
                     child: TextField(
                       controller: _supplementController,
-                      decoration: const InputDecoration(
-                        labelText: 'Supplemento',
+                      decoration: InputDecoration(
+                        labelText: l.fixedMenuChoicesSupplement,
                         prefixText: '€ ',
                       ),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -698,7 +705,7 @@ class _AddChoiceDialogState extends ConsumerState<_AddChoiceDialog> {
                         value: _isDefault,
                         onChanged: (v) => setState(() => _isDefault = v!),
                       ),
-                      const Text('Predefinito'),
+                      Text(l.fixedMenuChoicesDefault),
                     ],
                   ),
                 ],
@@ -710,7 +717,7 @@ class _AddChoiceDialogState extends ConsumerState<_AddChoiceDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
+          child: Text(l.commonCancel),
         ),
         FilledButton(
           onPressed: _selectedItem == null || _isLoading ? null : _save,
@@ -719,7 +726,7 @@ class _AddChoiceDialogState extends ConsumerState<_AddChoiceDialog> {
                   width: 20, height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Aggiungi'),
+              : Text(l.fixedMenuChoicesAddBtn),
         ),
       ],
     );
@@ -753,7 +760,7 @@ class _AddChoiceDialogState extends ConsumerState<_AddChoiceDialog> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Errore: $e'), backgroundColor: AppColors.error),
+          SnackBar(content: Text(humanizeError(e, context)), backgroundColor: AppColors.error),
         );
       }
     } finally {

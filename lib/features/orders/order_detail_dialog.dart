@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/order_status_label.dart';
 import '../../data/models/order.dart';
 import '../../data/models/order_item.dart';
 import '../../data/models/table.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Dialog to show order details with items
 class OrderDetailDialog extends ConsumerStatefulWidget {
@@ -93,7 +95,7 @@ class _OrderDetailDialogState extends ConsumerState<OrderDetailDialog> {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Ordine ${_getStatusLabel(newStatus)}'),
+            content: Text(localizedOrderStatus(context, newStatus)),
             backgroundColor: AppColors.success,
           ),
         );
@@ -126,18 +128,19 @@ class _OrderDetailDialogState extends ConsumerState<OrderDetailDialog> {
     }
   }
 
-  String _getNextActionText(String status) {
+  String _getNextActionText(BuildContext context, String status) {
+    final l = AppLocalizations.of(context);
     switch (status) {
       case 'pending':
-        return 'Conferma Ordine';
+        return l.ordersStaffConfirm;
       case 'confirmed':
-        return 'Inizia Preparazione';
+        return l.ordersStaffStartPreparing;
       case 'preparing':
-        return 'Segna come Pronto';
+        return l.ordersStaffMarkReady;
       case 'ready':
-        return 'Segna come Servito';
+        return l.ordersStaffMarkDelivered;
       default:
-        return 'Azione';
+        return l.ordersStaffActions;
     }
   }
 
@@ -213,7 +216,7 @@ class _OrderDetailDialogState extends ConsumerState<OrderDetailDialog> {
                                 color: Colors.white70, size: 16),
                             const SizedBox(width: AppSpacing.xs),
                             Text(
-                              _table?.name ?? 'Caricamento...',
+                              _table?.name ?? AppLocalizations.of(context).commonLoading,
                               style: const TextStyle(color: Colors.white70),
                             ),
                           ],
@@ -254,10 +257,10 @@ class _OrderDetailDialogState extends ConsumerState<OrderDetailDialog> {
                       ),
                     )
                   : _items.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Padding(
-                            padding: EdgeInsets.all(AppSpacing.xl),
-                            child: Text('Nessun piatto nell\'ordine'),
+                            padding: const EdgeInsets.all(AppSpacing.xl),
+                            child: Text(AppLocalizations.of(context).manualOrderEmptyCart),
                           ),
                         )
                       : ListView.separated(
@@ -320,9 +323,9 @@ class _OrderDetailDialogState extends ConsumerState<OrderDetailDialog> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Totale',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context).checkoutTotal,
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
                         ),
@@ -375,26 +378,27 @@ class _OrderDetailDialogState extends ConsumerState<OrderDetailDialog> {
                                 : () async {
                                     final confirm = await showDialog<bool>(
                                       context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('Annulla Ordine'),
-                                        content: const Text(
-                                            'Sei sicuro di voler annullare questo ordine?'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(context).pop(false),
-                                            child: const Text('No'),
-                                          ),
-                                          FilledButton(
-                                            onPressed: () =>
-                                                Navigator.of(context).pop(true),
-                                            style: FilledButton.styleFrom(
-                                              backgroundColor: AppColors.error,
+                                      builder: (dialogCtx) {
+                                        final l = AppLocalizations.of(dialogCtx);
+                                        return AlertDialog(
+                                          title: Text(l.ordersStaffCancel),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(dialogCtx).pop(false),
+                                              child: Text(l.commonNo),
                                             ),
-                                            child: const Text('Sì, Annulla'),
-                                          ),
-                                        ],
-                                      ),
+                                            FilledButton(
+                                              onPressed: () =>
+                                                  Navigator.of(dialogCtx).pop(true),
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor: AppColors.error,
+                                              ),
+                                              child: Text(l.commonYes),
+                                            ),
+                                          ],
+                                        );
+                                      },
                                     );
                                     if (confirm == true) {
                                       await _updateStatus('cancelled');
@@ -404,7 +408,7 @@ class _OrderDetailDialogState extends ConsumerState<OrderDetailDialog> {
                               foregroundColor: AppColors.error,
                               side: const BorderSide(color: AppColors.error),
                             ),
-                            child: const Text('Annulla'),
+                            child: Text(AppLocalizations.of(context).ordersStaffCancel),
                           ),
                         ),
                       if (order.canBeCancelled)
@@ -424,7 +428,7 @@ class _OrderDetailDialogState extends ConsumerState<OrderDetailDialog> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : Text(_getNextActionText(order.status)),
+                              : Text(_getNextActionText(context, order.status)),
                         ),
                       ),
                     ],

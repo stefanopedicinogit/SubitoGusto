@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/table.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'table_dialog.dart';
 
 /// Tables management page for desktop
@@ -14,6 +15,7 @@ class TablesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Use stream for realtime updates
     final tablesAsync = ref.watch(tablesStreamProvider);
+    final l = AppLocalizations.of(context);
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -25,7 +27,7 @@ class TablesPage extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Gestisci i tavoli del ristorante',
+                l.tablesTitle,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -38,7 +40,7 @@ class TablesPage extends ConsumerWidget {
                   );
                 },
                 icon: const Icon(Icons.add),
-                label: const Text('Nuovo Tavolo'),
+                label: Text(l.tablesAddTable),
               ),
             ],
           ),
@@ -59,7 +61,7 @@ class TablesPage extends ConsumerWidget {
                         ),
                         const SizedBox(height: AppSpacing.md),
                         Text(
-                          'Nessun tavolo configurato',
+                          l.tablesEmpty,
                           style:
                               Theme.of(context).textTheme.titleLarge?.copyWith(
                                     color: AppColors.textSecondary,
@@ -74,7 +76,7 @@ class TablesPage extends ConsumerWidget {
                             );
                           },
                           icon: const Icon(Icons.add),
-                          label: const Text('Aggiungi il primo tavolo'),
+                          label: Text(l.tablesAddTable),
                         ),
                       ],
                     ),
@@ -110,6 +112,7 @@ class _TableCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -137,21 +140,19 @@ class _TableCard extends ConsumerWidget {
                         final confirm = await showDialog<bool>(
                           context: context,
                           builder: (context) => AlertDialog(
-                            title: const Text('Elimina Tavolo'),
-                            content: Text(
-                              'Sei sicuro di voler eliminare "${table.name}"?',
-                            ),
+                            title: Text(l.tablesDeleteConfirm),
+                            content: Text('"${table.name}"'),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.of(context).pop(false),
-                                child: const Text('Annulla'),
+                                child: Text(l.commonCancel),
                               ),
                               FilledButton(
                                 onPressed: () => Navigator.of(context).pop(true),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: AppColors.error,
                                 ),
-                                child: const Text('Elimina'),
+                                child: Text(l.commonDelete),
                               ),
                             ],
                           ),
@@ -166,34 +167,34 @@ class _TableCard extends ConsumerWidget {
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'edit',
                       child: Row(
                         children: [
-                          Icon(Icons.edit),
-                          SizedBox(width: AppSpacing.sm),
-                          Text('Modifica'),
+                          const Icon(Icons.edit),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(l.commonEdit),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'qr',
                       child: Row(
                         children: [
-                          Icon(Icons.qr_code),
-                          SizedBox(width: AppSpacing.sm),
-                          Text('Mostra QR'),
+                          const Icon(Icons.qr_code),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(l.tablesShowQr),
                         ],
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete',
                       child: Row(
                         children: [
-                          Icon(Icons.delete, color: AppColors.error),
-                          SizedBox(width: AppSpacing.sm),
-                          Text('Elimina',
-                              style: TextStyle(color: AppColors.error)),
+                          const Icon(Icons.delete, color: AppColors.error),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(l.commonDelete,
+                              style: const TextStyle(color: AppColors.error)),
                         ],
                       ),
                     ),
@@ -291,7 +292,7 @@ class _TableCard extends ConsumerWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Chiudi'),
+            child: Text(AppLocalizations.of(context).commonClose),
           ),
         ],
       ),
@@ -328,7 +329,7 @@ class _StatusChip extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.xs),
           Text(
-            _getLabel(),
+            _getLabel(context),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: _getColor(),
                   fontWeight: FontWeight.w600,
@@ -352,14 +353,15 @@ class _StatusChip extends StatelessWidget {
     }
   }
 
-  String _getLabel() {
+  String _getLabel(BuildContext context) {
+    final l = AppLocalizations.of(context);
     switch (status) {
       case 'available':
-        return 'Libero';
+        return l.tablesStatusFree;
       case 'occupied':
-        return 'Occupato';
+        return l.tablesStatusOccupied;
       case 'reserved':
-        return 'Prenotato';
+        return l.tablesStatusReserved;
       default:
         return status;
     }

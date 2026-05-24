@@ -3,8 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/error_messages.dart';
 import '../../data/providers/settings_provider.dart';
 import '../../data/providers/providers.dart';
+import '../../data/services/geocoding_service.dart';
+import '../../core/widgets/language_switcher.dart';
+import '../../l10n/generated/app_localizations.dart';
+import 'discovery_settings_section.dart';
+import 'edit_address_dialog.dart';
 
 /// Settings page for desktop
 class SettingsPage extends ConsumerWidget {
@@ -14,6 +20,7 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final tenantAsync = ref.watch(tenantProvider);
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -26,29 +33,70 @@ class SettingsPage extends ConsumerWidget {
               children: [
                 // Tenant Info Section
                 _SectionCard(
-                  title: 'Informazioni Ristorante',
+                  title: l.settingsRestaurantInfo,
                   icon: Icons.restaurant,
                   child: tenantAsync.when(
                     data: (tenant) => Column(
                       children: [
                         _InfoRow(
-                          label: 'Nome',
-                          value: tenant?.name ?? 'Ristorante',
+                          label: l.settingsRestaurantName,
+                          value: tenant?.name ?? l.settingsRestaurant,
+                        ),
+                        const Divider(height: 1),
+                        InkWell(
+                          onTap: tenant == null
+                              ? null
+                              : () => showDialog(
+                                    context: context,
+                                    builder: (_) => EditAddressDialog(
+                                      tenantId: tenant.id,
+                                      currentAddress: tenant.address,
+                                    ),
+                                  ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                              vertical: AppSpacing.sm,
+                            ),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 120,
+                                  child: Text(
+                                    l.settingsAddress,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: AppColors.textSecondary,
+                                        ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    tenant?.address ?? l.settingsNotConfigured,
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.edit_outlined,
+                                  size: 18,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                         const Divider(height: 1),
                         _InfoRow(
-                          label: 'Indirizzo',
-                          value: tenant?.address ?? 'Non configurato',
+                          label: l.settingsPhone,
+                          value: tenant?.phone ?? l.settingsNotConfigured,
                         ),
                         const Divider(height: 1),
                         _InfoRow(
-                          label: 'Telefono',
-                          value: tenant?.phone ?? 'Non configurato',
-                        ),
-                        const Divider(height: 1),
-                        _InfoRow(
-                          label: 'Email',
-                          value: tenant?.email ?? 'Non configurato',
+                          label: l.settingsEmail,
+                          value: tenant?.email ?? l.settingsNotConfigured,
                         ),
                       ],
                     ),
@@ -58,9 +106,9 @@ class SettingsPage extends ConsumerWidget {
                         child: CircularProgressIndicator(),
                       ),
                     ),
-                    error: (_, __) => const Padding(
-                      padding: EdgeInsets.all(AppSpacing.lg),
-                      child: Text('Errore nel caricamento'),
+                    error: (_, __) => Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Text(l.settingsLoadingError),
                     ),
                   ),
                 ),
@@ -68,13 +116,13 @@ class SettingsPage extends ConsumerWidget {
 
                 // Notifications Section
                 _SectionCard(
-                  title: 'Notifiche',
+                  title: l.settingsNotifications,
                   icon: Icons.notifications,
                   child: Column(
                     children: [
                       _SettingsSwitch(
-                        title: 'Notifiche ordini',
-                        subtitle: 'Ricevi notifiche per nuovi ordini',
+                        title: l.settingsNotificationsOrders,
+                        subtitle: l.settingsNotificationsOrdersSub,
                         value: settings.orderNotifications,
                         onChanged: (value) {
                           ref.read(settingsProvider.notifier).setOrderNotifications(value);
@@ -82,8 +130,8 @@ class SettingsPage extends ConsumerWidget {
                       ),
                       const Divider(height: 1),
                       _SettingsSwitch(
-                        title: 'Suoni di avviso',
-                        subtitle: 'Riproduci un suono per le notifiche',
+                        title: l.settingsSoundAlertsTitle,
+                        subtitle: l.settingsSoundAlertsSub,
                         value: settings.soundAlerts,
                         onChanged: settings.orderNotifications
                             ? (value) {
@@ -93,8 +141,8 @@ class SettingsPage extends ConsumerWidget {
                       ),
                       const Divider(height: 1),
                       _SettingsSwitch(
-                        title: 'Vibrazione',
-                        subtitle: 'Vibra per le notifiche (mobile)',
+                        title: l.settingsVibrationTitle,
+                        subtitle: l.settingsVibrationSub,
                         value: settings.vibration,
                         onChanged: settings.orderNotifications
                             ? (value) {
@@ -118,13 +166,13 @@ class SettingsPage extends ConsumerWidget {
 
                 // Orders Section
                 _SectionCard(
-                  title: 'Gestione Ordini',
+                  title: l.settingsOrdersManagement,
                   icon: Icons.receipt_long,
                   child: Column(
                     children: [
                       _SettingsSwitch(
-                        title: 'Conferma automatica',
-                        subtitle: 'Conferma automaticamente i nuovi ordini',
+                        title: l.settingsAutoConfirm,
+                        subtitle: l.settingsAutoConfirmSub,
                         value: settings.autoConfirmOrders,
                         onChanged: (value) {
                           ref.read(settingsProvider.notifier).setAutoConfirmOrders(value);
@@ -137,7 +185,7 @@ class SettingsPage extends ConsumerWidget {
 
                 // Delivery Section
                 _SectionCard(
-                  title: 'Consegne',
+                  title: l.settingsDelivery,
                   icon: Icons.delivery_dining,
                   child: tenantAsync.when(
                     data: (tenant) => _DeliverySettingsEditor(
@@ -148,22 +196,71 @@ class SettingsPage extends ConsumerWidget {
                       deliveryEstimatedTimeMin: tenant?.deliveryEstimatedTimeMin ?? 30,
                       stripeAccountId: tenant?.stripeAccountId,
                       tenantId: tenant?.id,
+                      hasCoordinates: tenant?.hasCoordinates ?? false,
+                      address: tenant?.address,
+                      vacationMode: tenant?.vacationMode ?? false,
                     ),
                     loading: () => const Padding(
                       padding: EdgeInsets.all(AppSpacing.lg),
                       child: Center(child: CircularProgressIndicator()),
                     ),
-                    error: (_, __) => const Padding(
-                      padding: EdgeInsets.all(AppSpacing.lg),
-                      child: Text('Errore nel caricamento'),
+                    error: (_, __) => Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Text(l.settingsLoadingError),
                     ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // Discovery (cuisine + dietary tags) — powers marketplace filters
+                _SectionCard(
+                  title: l.settingsCategoryAndTags,
+                  icon: Icons.local_dining,
+                  child: tenantAsync.when(
+                    data: (tenant) => tenant == null
+                        ? const SizedBox.shrink()
+                        : DiscoverySettingsSection(tenant: tenant),
+                    loading: () => const Padding(
+                      padding: EdgeInsets.all(AppSpacing.lg),
+                      child: Center(child: CircularProgressIndicator()),
+                    ),
+                    error: (_, __) => Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Text(l.settingsLoadingError),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // Promo codes — link to the dedicated management page.
+                _SectionCard(
+                  title: l.settingsPromoCodes,
+                  icon: Icons.local_offer,
+                  child: ListTile(
+                    leading: const Icon(Icons.local_offer_outlined),
+                    title: Text(l.settingsPromoCodesAction),
+                    subtitle: Text(l.settingsPromoCodesSubtitle),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push('/promo-codes'),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+
+                // Language
+                _SectionCard(
+                  title: 'Lingua / Language',
+                  icon: Icons.language,
+                  child: const ListTile(
+                    leading: Icon(Icons.translate),
+                    title: Text('Lingua / Language'),
+                    trailing: LanguageSwitcher(),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
                 // Theme Section
                 _SectionCard(
-                  title: 'Aspetto',
+                  title: l.settingsAppearance,
                   icon: Icons.palette,
                   child: Column(
                     children: [
@@ -180,7 +277,7 @@ class SettingsPage extends ConsumerWidget {
 
                 // Brand Colors Section
                 _SectionCard(
-                  title: 'Colori Brand',
+                  title: l.settingsBrandColors,
                   icon: Icons.color_lens,
                   child: tenantAsync.when(
                     data: (tenant) => _BrandColorsEditor(
@@ -193,9 +290,9 @@ class SettingsPage extends ConsumerWidget {
                       padding: EdgeInsets.all(AppSpacing.lg),
                       child: Center(child: CircularProgressIndicator()),
                     ),
-                    error: (_, __) => const Padding(
-                      padding: EdgeInsets.all(AppSpacing.lg),
-                      child: Text('Errore nel caricamento'),
+                    error: (_, __) => Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Text(l.settingsLoadingError),
                     ),
                   ),
                 ),
@@ -203,12 +300,12 @@ class SettingsPage extends ConsumerWidget {
 
                 // Account Section
                 _SectionCard(
-                  title: 'Account',
+                  title: l.settingsAccount,
                   icon: Icons.person,
                   child: Column(
                     children: [
                       _InfoRow(
-                        label: 'Email',
+                        label: l.settingsEmail,
                         value: Supabase.instance.client.auth.currentUser?.email ?? 'N/A',
                       ),
                       const Divider(height: 1),
@@ -220,7 +317,7 @@ class SettingsPage extends ConsumerWidget {
                               child: OutlinedButton.icon(
                                 onPressed: () => _showChangePasswordDialog(context),
                                 icon: const Icon(Icons.lock),
-                                label: const Text('Cambia Password'),
+                                label: Text(l.settingsChangePassword),
                               ),
                             ),
                             const SizedBox(width: AppSpacing.md),
@@ -231,7 +328,7 @@ class SettingsPage extends ConsumerWidget {
                                   backgroundColor: AppColors.error,
                                 ),
                                 icon: const Icon(Icons.logout),
-                                label: const Text('Esci'),
+                                label: Text(l.settingsSignOut),
                               ),
                             ),
                           ],
@@ -254,7 +351,7 @@ class SettingsPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        'Versione 1.0.0',
+                        l.settingsVersion('1.0.0'),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -280,18 +377,18 @@ class SettingsPage extends ConsumerWidget {
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Conferma Logout'),
-        content: const Text('Sei sicuro di voler uscire?'),
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(AppLocalizations.of(dialogCtx).settingsSignOutTitle),
+        content: Text(AppLocalizations.of(dialogCtx).settingsSignOutConfirm),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annulla'),
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: Text(AppLocalizations.of(dialogCtx).commonCancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogCtx, true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Esci'),
+            child: Text(AppLocalizations.of(dialogCtx).settingsSignOut),
           ),
         ],
       ),
@@ -426,28 +523,29 @@ class _ThemeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Row(
         children: [
-          const Text('Tema'),
+          Text(l.settingsTheme),
           const Spacer(),
           SegmentedButton<String>(
-            segments: const [
+            segments: [
               ButtonSegment(
                 value: 'light',
-                icon: Icon(Icons.light_mode),
-                label: Text('Chiaro'),
+                icon: const Icon(Icons.light_mode),
+                label: Text(l.settingsThemeLightShort),
               ),
               ButtonSegment(
                 value: 'dark',
-                icon: Icon(Icons.dark_mode),
-                label: Text('Scuro'),
+                icon: const Icon(Icons.dark_mode),
+                label: Text(l.settingsThemeDarkShort),
               ),
               ButtonSegment(
                 value: 'system',
-                icon: Icon(Icons.settings_brightness),
-                label: Text('Sistema'),
+                icon: const Icon(Icons.settings_brightness),
+                label: Text(l.settingsThemeSystemShort),
               ),
             ],
             selected: {currentTheme},
@@ -470,7 +568,8 @@ class _SoundSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sounds = ['Classico', 'Campanello', 'Chime'];
+    final l = AppLocalizations.of(context);
+    final sounds = [l.settingsSoundClassic, l.settingsSoundBell, l.settingsSoundChime];
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
@@ -480,7 +579,7 @@ class _SoundSelector extends StatelessWidget {
         children: [
           const Icon(Icons.music_note, color: AppColors.textSecondary),
           const SizedBox(width: AppSpacing.sm),
-          const Text('Suono notifica'),
+          Text(l.settingsNotificationSound),
           const Spacer(),
           DropdownButton<int>(
             value: currentIndex,
@@ -533,8 +632,8 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password aggiornata con successo'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).settingsPasswordUpdated),
             backgroundColor: AppColors.success,
           ),
         );
@@ -543,7 +642,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore: $e'),
+            content: Text(humanizeError(e, context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -557,8 +656,9 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Cambia Password'),
+      title: Text(l.settingsChangePassword),
       content: Form(
         key: _formKey,
         child: Column(
@@ -568,7 +668,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
               controller: _newPasswordController,
               obscureText: _obscureNew,
               decoration: InputDecoration(
-                labelText: 'Nuova password',
+                labelText: l.settingsNewPassword,
                 suffixIcon: IconButton(
                   icon: Icon(_obscureNew ? Icons.visibility : Icons.visibility_off),
                   onPressed: () => setState(() => _obscureNew = !_obscureNew),
@@ -576,7 +676,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
               ),
               validator: (value) {
                 if (value == null || value.length < 6) {
-                  return 'Minimo 6 caratteri';
+                  return l.settingsPasswordMinChars;
                 }
                 return null;
               },
@@ -586,7 +686,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
               controller: _confirmPasswordController,
               obscureText: _obscureConfirm,
               decoration: InputDecoration(
-                labelText: 'Conferma password',
+                labelText: l.settingsConfirmPassword,
                 suffixIcon: IconButton(
                   icon: Icon(_obscureConfirm ? Icons.visibility : Icons.visibility_off),
                   onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
@@ -594,7 +694,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
               ),
               validator: (value) {
                 if (value != _newPasswordController.text) {
-                  return 'Le password non coincidono';
+                  return l.settingsPasswordMismatch;
                 }
                 return null;
               },
@@ -605,7 +705,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.pop(context),
-          child: const Text('Annulla'),
+          child: Text(l.commonCancel),
         ),
         FilledButton(
           onPressed: _isLoading ? null : _changePassword,
@@ -615,7 +715,7 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Salva'),
+              : Text(l.commonSave),
         ),
       ],
     );
@@ -723,8 +823,8 @@ class _BrandColorsEditorState extends ConsumerState<_BrandColorsEditor> {
     if (widget.tenantId == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Errore: nessun ristorante associato'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).settingsNoTenantError),
             backgroundColor: AppColors.error,
           ),
         );
@@ -764,8 +864,8 @@ class _BrandColorsEditorState extends ConsumerState<_BrandColorsEditor> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Colori salvati con successo'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).settingsColorsSaved),
             backgroundColor: AppColors.success,
           ),
         );
@@ -774,7 +874,7 @@ class _BrandColorsEditorState extends ConsumerState<_BrandColorsEditor> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore nel salvataggio: $e'),
+            content: Text(humanizeError(e, context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -788,28 +888,29 @@ class _BrandColorsEditorState extends ConsumerState<_BrandColorsEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _ColorPickerRow(
-          label: 'Colore Primario',
-          hint: 'Il colore principale del brand',
+          label: l.settingsPrimaryColor,
+          hint: l.settingsPrimaryColorHint,
           controller: _primaryController,
           options: _primaryOptions,
           onColorSelected: (color) => setState(() => _primaryController.text = color),
         ),
         const Divider(height: 1),
         _ColorPickerRow(
-          label: 'Colore Secondario',
-          hint: 'Colore per accenti e dettagli',
+          label: l.settingsSecondaryColor,
+          hint: l.settingsSecondaryColorHint,
           controller: _secondaryController,
           options: _secondaryOptions,
           onColorSelected: (color) => setState(() => _secondaryController.text = color),
         ),
         const Divider(height: 1),
         _ColorPickerRow(
-          label: 'Colore Sfondo',
-          hint: 'Sfondo delle pagine (tema chiaro)',
+          label: l.settingsBackgroundColor,
+          hint: l.settingsBackgroundColorHint,
           controller: _backgroundController,
           options: _backgroundOptions,
           onColorSelected: (color) => setState(() => _backgroundController.text = color),
@@ -859,9 +960,9 @@ class _BrandColorsEditorState extends ConsumerState<_BrandColorsEditor> {
                           color: _parseColor(_secondaryController.text) ?? AppColors.gold,
                           borderRadius: BorderRadius.circular(AppRadius.sm),
                         ),
-                        child: const Text(
-                          'Accento',
-                          style: TextStyle(
+                        child: Text(
+                          l.settingsAccent,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                             fontSize: 12,
@@ -885,7 +986,7 @@ class _BrandColorsEditorState extends ConsumerState<_BrandColorsEditor> {
                         ),
                       )
                     : const Icon(Icons.save),
-                label: const Text('Salva Colori'),
+                label: Text(l.settingsSaveColors),
               ),
             ],
           ),
@@ -1028,6 +1129,9 @@ class _DeliverySettingsEditor extends ConsumerStatefulWidget {
   final int deliveryEstimatedTimeMin;
   final String? stripeAccountId;
   final String? tenantId;
+  final bool hasCoordinates;
+  final String? address;
+  final bool vacationMode;
 
   const _DeliverySettingsEditor({
     required this.deliveryEnabled,
@@ -1037,6 +1141,9 @@ class _DeliverySettingsEditor extends ConsumerStatefulWidget {
     required this.deliveryEstimatedTimeMin,
     this.stripeAccountId,
     this.tenantId,
+    required this.hasCoordinates,
+    this.address,
+    required this.vacationMode,
   });
 
   @override
@@ -1047,6 +1154,7 @@ class _DeliverySettingsEditor extends ConsumerStatefulWidget {
 class _DeliverySettingsEditorState
     extends ConsumerState<_DeliverySettingsEditor> {
   late bool _enabled;
+  late bool _vacation;
   late TextEditingController _feeController;
   late TextEditingController _radiusController;
   late TextEditingController _minOrderController;
@@ -1057,6 +1165,7 @@ class _DeliverySettingsEditorState
   void initState() {
     super.initState();
     _enabled = widget.deliveryEnabled;
+    _vacation = widget.vacationMode;
     _feeController =
         TextEditingController(text: widget.deliveryFee.toStringAsFixed(2));
     _radiusController =
@@ -1072,6 +1181,9 @@ class _DeliverySettingsEditorState
     super.didUpdateWidget(oldWidget);
     if (oldWidget.deliveryEnabled != widget.deliveryEnabled) {
       _enabled = widget.deliveryEnabled;
+    }
+    if (oldWidget.vacationMode != widget.vacationMode) {
+      _vacation = widget.vacationMode;
     }
     if (oldWidget.deliveryFee != widget.deliveryFee) {
       _feeController.text = widget.deliveryFee.toStringAsFixed(2);
@@ -1117,9 +1229,9 @@ class _DeliverySettingsEditorState
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Configura Stripe'),
+            title: Text(AppLocalizations.of(ctx).settingsStripeOnboardingTitle),
             content: SelectableText(
-              'Apri questo link per completare la configurazione:\n\n$url',
+              AppLocalizations.of(ctx).settingsStripeOnboardingBody(url),
             ),
             actions: [
               FilledButton(
@@ -1134,7 +1246,7 @@ class _DeliverySettingsEditorState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore: $e'),
+            content: Text(humanizeError(e, context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -1152,6 +1264,7 @@ class _DeliverySettingsEditorState
           .from('tenants')
           .update({
             'delivery_enabled': _enabled,
+            'vacation_mode': _vacation,
             'delivery_fee': double.tryParse(_feeController.text) ?? 0,
             'delivery_radius_km':
                 double.tryParse(_radiusController.text) ?? 5,
@@ -1168,8 +1281,8 @@ class _DeliverySettingsEditorState
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Impostazioni consegna salvate'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).settingsDeliverySaved),
             backgroundColor: AppColors.success,
           ),
         );
@@ -1178,7 +1291,7 @@ class _DeliverySettingsEditorState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore nel salvataggio: $e'),
+            content: Text(humanizeError(e, context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -1190,26 +1303,47 @@ class _DeliverySettingsEditorState
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Column(
       children: [
         SwitchListTile(
-          title: const Text('Abilita consegne'),
-          subtitle: const Text(
-            'Il ristorante apparirà nel marketplace per le consegne a domicilio',
-          ),
+          title: Text(l.settingsEnableDelivery),
+          subtitle: Text(l.settingsEnableDeliverySub),
           value: _enabled,
           onChanged: (value) => setState(() => _enabled = value),
           activeColor: Theme.of(context).colorScheme.primary,
         ),
         if (_enabled) ...[
           const Divider(height: 1),
+          SwitchListTile(
+            secondary: const Icon(Icons.beach_access_outlined),
+            title: Text(l.settingsVacation),
+            subtitle: Text(l.settingsVacationSub),
+            value: _vacation,
+            onChanged: (value) => setState(() => _vacation = value),
+            activeColor: AppColors.warning,
+          ),
+          const Divider(height: 1),
+          if (!widget.hasCoordinates && widget.tenantId != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                0,
+              ),
+              child: _GeocodingWarning(
+                tenantId: widget.tenantId!,
+                address: widget.address,
+              ),
+            ),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Row(
               children: [
                 Expanded(
                   child: _DeliveryField(
-                    label: 'Costo consegna',
+                    label: l.settingsDeliveryCost,
                     suffix: '\u20ac',
                     controller: _feeController,
                     keyboardType:
@@ -1219,7 +1353,7 @@ class _DeliverySettingsEditorState
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: _DeliveryField(
-                    label: 'Ordine minimo',
+                    label: l.settingsDeliveryMinOrder,
                     suffix: '\u20ac',
                     controller: _minOrderController,
                     keyboardType:
@@ -1235,7 +1369,7 @@ class _DeliverySettingsEditorState
               children: [
                 Expanded(
                   child: _DeliveryField(
-                    label: 'Raggio consegna',
+                    label: l.settingsDeliveryRadiusLabel,
                     suffix: 'km',
                     controller: _radiusController,
                     keyboardType:
@@ -1245,7 +1379,7 @@ class _DeliverySettingsEditorState
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: _DeliveryField(
-                    label: 'Tempo stimato',
+                    label: l.settingsDeliveryEtaLabel,
                     suffix: 'min',
                     controller: _timeController,
                     keyboardType: TextInputType.number,
@@ -1265,6 +1399,11 @@ class _DeliverySettingsEditorState
                     ? AppColors.success.withValues(alpha: 0.1)
                     : AppColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(
+                  color: widget.stripeAccountId != null
+                      ? AppColors.success.withValues(alpha: 0.4)
+                      : AppColors.warning.withValues(alpha: 0.4),
+                ),
               ),
               child: Row(
                 children: [
@@ -1279,22 +1418,39 @@ class _DeliverySettingsEditorState
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
-                    child: Text(
-                      widget.stripeAccountId != null
-                          ? 'Stripe Connect configurato'
-                          : 'Stripe Connect non configurato — necessario per ricevere pagamenti',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: widget.stripeAccountId != null
-                            ? AppColors.success
-                            : AppColors.warning,
-                      ),
-                    ),
+                    child: widget.stripeAccountId != null
+                        ? Text(
+                            l.settingsStripeConnected,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.success,
+                            ),
+                          )
+                        : Text.rich(
+                            TextSpan(
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: AppColors.warning,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: l.settingsStripeNotConnected,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: l.settingsStripeNotConnectedSub,
+                                ),
+                              ],
+                            ),
+                          ),
                   ),
                   if (widget.stripeAccountId == null)
                     FilledButton.tonal(
                       onPressed: _startStripeOnboarding,
-                      child: const Text('Configura'),
+                      child: Text(l.settingsStripeConfigure),
                     ),
                 ],
               ),
@@ -1322,7 +1478,7 @@ class _DeliverySettingsEditorState
                       ),
                     )
                   : const Icon(Icons.save),
-              label: const Text('Salva'),
+              label: Text(l.commonSave),
             ),
           ),
         ),
@@ -1354,6 +1510,162 @@ class _DeliveryField extends StatelessWidget {
         suffixText: suffix,
         isDense: true,
         border: const OutlineInputBorder(),
+      ),
+    );
+  }
+}
+
+/// Warning shown when delivery is enabled but the tenant has no lat/lng.
+/// Offers a retry button that re-geocodes the existing address, or — if no
+/// address is set — prompts the user to add one.
+class _GeocodingWarning extends ConsumerStatefulWidget {
+  final String tenantId;
+  final String? address;
+
+  const _GeocodingWarning({required this.tenantId, this.address});
+
+  @override
+  ConsumerState<_GeocodingWarning> createState() => _GeocodingWarningState();
+}
+
+class _GeocodingWarningState extends ConsumerState<_GeocodingWarning> {
+  bool _isRetrying = false;
+  String? _resultMessage;
+  bool _resultIsError = false;
+
+  Future<void> _retry() async {
+    final address = widget.address?.trim();
+    if (address == null || address.isEmpty) return;
+
+    setState(() {
+      _isRetrying = true;
+      _resultMessage = null;
+    });
+
+    final geo = await GeocodingService().geocode(address);
+
+    if (!mounted) return;
+
+    final l = AppLocalizations.of(context);
+    if (geo == null) {
+      setState(() {
+        _isRetrying = false;
+        _resultIsError = true;
+        _resultMessage = l.settingsGeoFail;
+      });
+      return;
+    }
+
+    try {
+      await Supabase.instance.client.from('tenants').update({
+        'latitude': geo.lat,
+        'longitude': geo.lng,
+      }).eq('id', widget.tenantId);
+
+      ref.invalidate(tenantProvider);
+
+      if (!mounted) return;
+      setState(() {
+        _isRetrying = false;
+        _resultIsError = false;
+        _resultMessage = l.settingsGeoSuccess;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isRetrying = false;
+        _resultIsError = true;
+        _resultMessage = humanizeError(e, context);
+      });
+    }
+  }
+
+  Future<void> _openAddressDialog() async {
+    await showDialog<bool>(
+      context: context,
+      builder: (_) => EditAddressDialog(
+        tenantId: widget.tenantId,
+        currentAddress: widget.address,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final hasAddress =
+        widget.address != null && widget.address!.trim().isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(
+          color: AppColors.warning.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                size: 20,
+                color: AppColors.warning,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  l.settingsNotGeolocated,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.warning,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              if (hasAddress)
+                FilledButton.tonal(
+                  onPressed: _isRetrying ? null : _retry,
+                  child: _isRetrying
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(l.commonRetry),
+                )
+              else
+                FilledButton.tonal(
+                  onPressed: _openAddressDialog,
+                  child: Text(l.settingsSetAddress),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            hasAddress
+                ? l.settingsGeoMissingHint
+                : l.settingsGeoAddressFirst,
+            style: const TextStyle(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          if (_resultMessage != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              _resultMessage!,
+              style: TextStyle(
+                fontSize: 13,
+                color: _resultIsError ? AppColors.error : AppColors.success,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

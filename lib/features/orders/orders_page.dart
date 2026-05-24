@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/order_status_label.dart';
 import '../../data/models/order.dart';
 import '../../data/models/delivery_order.dart';
 import '../../data/models/table.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'order_detail_dialog.dart';
 
 /// Orders management page for desktop
@@ -37,6 +39,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
   Widget build(BuildContext context) {
     final ordersAsync = ref.watch(ordersStreamProvider);
     final deliveryOrdersAsync = ref.watch(staffDeliveryOrdersStreamProvider);
+    final l = AppLocalizations.of(context);
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -69,17 +72,17 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
                 });
               },
               tabs: [
-                const Tab(text: 'Tutti'),
-                const Tab(text: 'In Attesa'),
-                const Tab(text: 'In Preparazione'),
-                const Tab(text: 'Pronti'),
+                Tab(text: l.ordersStaffFilterAll),
+                Tab(text: l.statusPending),
+                Tab(text: l.statusPreparing),
+                Tab(text: l.statusReadyForDelivery),
                 Tab(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.delivery_dining, size: 18),
                       const SizedBox(width: 6),
-                      const Text('Consegne'),
+                      Text(l.ordersStaffTabDelivery),
                       // Active delivery orders badge
                       deliveryOrdersAsync.when(
                         data: (orders) {
@@ -90,7 +93,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.burgundy,
+                              color: Theme.of(context).colorScheme.primary,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
@@ -662,8 +665,8 @@ class _DeliveryOrderCardState extends ConsumerState<_DeliveryOrderCard> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.delivery_dining,
-                        size: 18, color: AppColors.burgundy),
+                    Icon(Icons.delivery_dining,
+                        size: 18, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(width: 6),
                     Text(
                       '#${order.orderNumber}',
@@ -745,7 +748,7 @@ class _DeliveryOrderCardState extends ConsumerState<_DeliveryOrderCard> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  order.isPaid ? 'Pagato' : 'Pagamento in attesa',
+                  order.isPaid ? AppLocalizations.of(context).ordersStaffPaymentPaid : AppLocalizations.of(context).ordersStaffPaymentPending,
                   style: TextStyle(
                     fontSize: 12,
                     color: order.isPaid ? AppColors.success : AppColors.statusPending,
@@ -878,20 +881,20 @@ class _DeliveryStatusChip extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: _getColor().withValues(alpha: 0.2),
+        color: _getColor(context).withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(AppRadius.full),
       ),
       child: Text(
         _getLabel(),
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: _getColor(),
+              color: _getColor(context),
               fontWeight: FontWeight.w600,
             ),
       ),
     );
   }
 
-  Color _getColor() {
+  Color _getColor(BuildContext context) {
     switch (status) {
       case 'pending':
         return AppColors.statusPending;
@@ -902,7 +905,7 @@ class _DeliveryStatusChip extends StatelessWidget {
       case 'ready_for_delivery':
         return AppColors.statusReady;
       case 'out_for_delivery':
-        return AppColors.burgundy;
+        return Theme.of(context).colorScheme.primary;
       case 'delivered':
         return AppColors.success;
       case 'cancelled':

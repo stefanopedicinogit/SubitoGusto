@@ -29,6 +29,8 @@ mixin _$Tenant {
   @JsonKey(name: 'cover_image_url')
   String? get coverImageUrl => throw _privateConstructorUsedError;
   String? get address => throw _privateConstructorUsedError;
+  double? get latitude => throw _privateConstructorUsedError;
+  double? get longitude => throw _privateConstructorUsedError;
   String? get phone => throw _privateConstructorUsedError;
   String? get email => throw _privateConstructorUsedError;
   @JsonKey(name: 'opening_hours')
@@ -45,8 +47,14 @@ mixin _$Tenant {
   double get deliveryMinOrder => throw _privateConstructorUsedError;
   @JsonKey(name: 'delivery_estimated_time_min')
   int get deliveryEstimatedTimeMin => throw _privateConstructorUsedError;
+  @JsonKey(name: 'vacation_mode')
+  bool get vacationMode => throw _privateConstructorUsedError;
   @JsonKey(name: 'stripe_account_id')
-  String? get stripeAccountId => throw _privateConstructorUsedError;
+  String? get stripeAccountId => throw _privateConstructorUsedError; // Discovery metadata (Phase 10)
+  @JsonKey(name: 'cuisine_type')
+  String? get cuisineType => throw _privateConstructorUsedError;
+  @JsonKey(name: 'dietary_tags')
+  List<String> get dietaryTags => throw _privateConstructorUsedError;
   @JsonKey(name: 'created_at')
   DateTime get createdAt => throw _privateConstructorUsedError;
   @JsonKey(name: 'updated_at')
@@ -73,6 +81,8 @@ abstract class $TenantCopyWith<$Res> {
     @JsonKey(name: 'logo_url') String? logoUrl,
     @JsonKey(name: 'cover_image_url') String? coverImageUrl,
     String? address,
+    double? latitude,
+    double? longitude,
     String? phone,
     String? email,
     @JsonKey(name: 'opening_hours') Map<String, dynamic>? openingHours,
@@ -82,7 +92,10 @@ abstract class $TenantCopyWith<$Res> {
     @JsonKey(name: 'delivery_radius_km') double deliveryRadiusKm,
     @JsonKey(name: 'delivery_min_order') double deliveryMinOrder,
     @JsonKey(name: 'delivery_estimated_time_min') int deliveryEstimatedTimeMin,
+    @JsonKey(name: 'vacation_mode') bool vacationMode,
     @JsonKey(name: 'stripe_account_id') String? stripeAccountId,
+    @JsonKey(name: 'cuisine_type') String? cuisineType,
+    @JsonKey(name: 'dietary_tags') List<String> dietaryTags,
     @JsonKey(name: 'created_at') DateTime createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
   });
@@ -109,6 +122,8 @@ class _$TenantCopyWithImpl<$Res, $Val extends Tenant>
     Object? logoUrl = freezed,
     Object? coverImageUrl = freezed,
     Object? address = freezed,
+    Object? latitude = freezed,
+    Object? longitude = freezed,
     Object? phone = freezed,
     Object? email = freezed,
     Object? openingHours = freezed,
@@ -118,7 +133,10 @@ class _$TenantCopyWithImpl<$Res, $Val extends Tenant>
     Object? deliveryRadiusKm = null,
     Object? deliveryMinOrder = null,
     Object? deliveryEstimatedTimeMin = null,
+    Object? vacationMode = null,
     Object? stripeAccountId = freezed,
+    Object? cuisineType = freezed,
+    Object? dietaryTags = null,
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
@@ -148,6 +166,14 @@ class _$TenantCopyWithImpl<$Res, $Val extends Tenant>
                 ? _value.address
                 : address // ignore: cast_nullable_to_non_nullable
                       as String?,
+            latitude: freezed == latitude
+                ? _value.latitude
+                : latitude // ignore: cast_nullable_to_non_nullable
+                      as double?,
+            longitude: freezed == longitude
+                ? _value.longitude
+                : longitude // ignore: cast_nullable_to_non_nullable
+                      as double?,
             phone: freezed == phone
                 ? _value.phone
                 : phone // ignore: cast_nullable_to_non_nullable
@@ -184,10 +210,22 @@ class _$TenantCopyWithImpl<$Res, $Val extends Tenant>
                 ? _value.deliveryEstimatedTimeMin
                 : deliveryEstimatedTimeMin // ignore: cast_nullable_to_non_nullable
                       as int,
+            vacationMode: null == vacationMode
+                ? _value.vacationMode
+                : vacationMode // ignore: cast_nullable_to_non_nullable
+                      as bool,
             stripeAccountId: freezed == stripeAccountId
                 ? _value.stripeAccountId
                 : stripeAccountId // ignore: cast_nullable_to_non_nullable
                       as String?,
+            cuisineType: freezed == cuisineType
+                ? _value.cuisineType
+                : cuisineType // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            dietaryTags: null == dietaryTags
+                ? _value.dietaryTags
+                : dietaryTags // ignore: cast_nullable_to_non_nullable
+                      as List<String>,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -217,6 +255,8 @@ abstract class _$$TenantImplCopyWith<$Res> implements $TenantCopyWith<$Res> {
     @JsonKey(name: 'logo_url') String? logoUrl,
     @JsonKey(name: 'cover_image_url') String? coverImageUrl,
     String? address,
+    double? latitude,
+    double? longitude,
     String? phone,
     String? email,
     @JsonKey(name: 'opening_hours') Map<String, dynamic>? openingHours,
@@ -226,7 +266,10 @@ abstract class _$$TenantImplCopyWith<$Res> implements $TenantCopyWith<$Res> {
     @JsonKey(name: 'delivery_radius_km') double deliveryRadiusKm,
     @JsonKey(name: 'delivery_min_order') double deliveryMinOrder,
     @JsonKey(name: 'delivery_estimated_time_min') int deliveryEstimatedTimeMin,
+    @JsonKey(name: 'vacation_mode') bool vacationMode,
     @JsonKey(name: 'stripe_account_id') String? stripeAccountId,
+    @JsonKey(name: 'cuisine_type') String? cuisineType,
+    @JsonKey(name: 'dietary_tags') List<String> dietaryTags,
     @JsonKey(name: 'created_at') DateTime createdAt,
     @JsonKey(name: 'updated_at') DateTime? updatedAt,
   });
@@ -252,6 +295,8 @@ class __$$TenantImplCopyWithImpl<$Res>
     Object? logoUrl = freezed,
     Object? coverImageUrl = freezed,
     Object? address = freezed,
+    Object? latitude = freezed,
+    Object? longitude = freezed,
     Object? phone = freezed,
     Object? email = freezed,
     Object? openingHours = freezed,
@@ -261,7 +306,10 @@ class __$$TenantImplCopyWithImpl<$Res>
     Object? deliveryRadiusKm = null,
     Object? deliveryMinOrder = null,
     Object? deliveryEstimatedTimeMin = null,
+    Object? vacationMode = null,
     Object? stripeAccountId = freezed,
+    Object? cuisineType = freezed,
+    Object? dietaryTags = null,
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
@@ -291,6 +339,14 @@ class __$$TenantImplCopyWithImpl<$Res>
             ? _value.address
             : address // ignore: cast_nullable_to_non_nullable
                   as String?,
+        latitude: freezed == latitude
+            ? _value.latitude
+            : latitude // ignore: cast_nullable_to_non_nullable
+                  as double?,
+        longitude: freezed == longitude
+            ? _value.longitude
+            : longitude // ignore: cast_nullable_to_non_nullable
+                  as double?,
         phone: freezed == phone
             ? _value.phone
             : phone // ignore: cast_nullable_to_non_nullable
@@ -327,10 +383,22 @@ class __$$TenantImplCopyWithImpl<$Res>
             ? _value.deliveryEstimatedTimeMin
             : deliveryEstimatedTimeMin // ignore: cast_nullable_to_non_nullable
                   as int,
+        vacationMode: null == vacationMode
+            ? _value.vacationMode
+            : vacationMode // ignore: cast_nullable_to_non_nullable
+                  as bool,
         stripeAccountId: freezed == stripeAccountId
             ? _value.stripeAccountId
             : stripeAccountId // ignore: cast_nullable_to_non_nullable
                   as String?,
+        cuisineType: freezed == cuisineType
+            ? _value.cuisineType
+            : cuisineType // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        dietaryTags: null == dietaryTags
+            ? _value._dietaryTags
+            : dietaryTags // ignore: cast_nullable_to_non_nullable
+                  as List<String>,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -354,6 +422,8 @@ class _$TenantImpl extends _Tenant {
     @JsonKey(name: 'logo_url') this.logoUrl,
     @JsonKey(name: 'cover_image_url') this.coverImageUrl,
     this.address,
+    this.latitude,
+    this.longitude,
     this.phone,
     this.email,
     @JsonKey(name: 'opening_hours') final Map<String, dynamic>? openingHours,
@@ -364,11 +434,16 @@ class _$TenantImpl extends _Tenant {
     @JsonKey(name: 'delivery_min_order') this.deliveryMinOrder = 0,
     @JsonKey(name: 'delivery_estimated_time_min')
     this.deliveryEstimatedTimeMin = 45,
+    @JsonKey(name: 'vacation_mode') this.vacationMode = false,
     @JsonKey(name: 'stripe_account_id') this.stripeAccountId,
+    @JsonKey(name: 'cuisine_type') this.cuisineType,
+    @JsonKey(name: 'dietary_tags')
+    final List<String> dietaryTags = const <String>[],
     @JsonKey(name: 'created_at') required this.createdAt,
     @JsonKey(name: 'updated_at') this.updatedAt,
   }) : _openingHours = openingHours,
        _settings = settings,
+       _dietaryTags = dietaryTags,
        super._();
 
   factory _$TenantImpl.fromJson(Map<String, dynamic> json) =>
@@ -388,6 +463,10 @@ class _$TenantImpl extends _Tenant {
   final String? coverImageUrl;
   @override
   final String? address;
+  @override
+  final double? latitude;
+  @override
+  final double? longitude;
   @override
   final String? phone;
   @override
@@ -430,8 +509,24 @@ class _$TenantImpl extends _Tenant {
   @JsonKey(name: 'delivery_estimated_time_min')
   final int deliveryEstimatedTimeMin;
   @override
+  @JsonKey(name: 'vacation_mode')
+  final bool vacationMode;
+  @override
   @JsonKey(name: 'stripe_account_id')
   final String? stripeAccountId;
+  // Discovery metadata (Phase 10)
+  @override
+  @JsonKey(name: 'cuisine_type')
+  final String? cuisineType;
+  final List<String> _dietaryTags;
+  @override
+  @JsonKey(name: 'dietary_tags')
+  List<String> get dietaryTags {
+    if (_dietaryTags is EqualUnmodifiableListView) return _dietaryTags;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_dietaryTags);
+  }
+
   @override
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
@@ -441,7 +536,7 @@ class _$TenantImpl extends _Tenant {
 
   @override
   String toString() {
-    return 'Tenant(id: $id, name: $name, description: $description, logoUrl: $logoUrl, coverImageUrl: $coverImageUrl, address: $address, phone: $phone, email: $email, openingHours: $openingHours, settings: $settings, deliveryEnabled: $deliveryEnabled, deliveryFee: $deliveryFee, deliveryRadiusKm: $deliveryRadiusKm, deliveryMinOrder: $deliveryMinOrder, deliveryEstimatedTimeMin: $deliveryEstimatedTimeMin, stripeAccountId: $stripeAccountId, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Tenant(id: $id, name: $name, description: $description, logoUrl: $logoUrl, coverImageUrl: $coverImageUrl, address: $address, latitude: $latitude, longitude: $longitude, phone: $phone, email: $email, openingHours: $openingHours, settings: $settings, deliveryEnabled: $deliveryEnabled, deliveryFee: $deliveryFee, deliveryRadiusKm: $deliveryRadiusKm, deliveryMinOrder: $deliveryMinOrder, deliveryEstimatedTimeMin: $deliveryEstimatedTimeMin, vacationMode: $vacationMode, stripeAccountId: $stripeAccountId, cuisineType: $cuisineType, dietaryTags: $dietaryTags, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -457,6 +552,10 @@ class _$TenantImpl extends _Tenant {
             (identical(other.coverImageUrl, coverImageUrl) ||
                 other.coverImageUrl == coverImageUrl) &&
             (identical(other.address, address) || other.address == address) &&
+            (identical(other.latitude, latitude) ||
+                other.latitude == latitude) &&
+            (identical(other.longitude, longitude) ||
+                other.longitude == longitude) &&
             (identical(other.phone, phone) || other.phone == phone) &&
             (identical(other.email, email) || other.email == email) &&
             const DeepCollectionEquality().equals(
@@ -477,8 +576,16 @@ class _$TenantImpl extends _Tenant {
                   deliveryEstimatedTimeMin,
                 ) ||
                 other.deliveryEstimatedTimeMin == deliveryEstimatedTimeMin) &&
+            (identical(other.vacationMode, vacationMode) ||
+                other.vacationMode == vacationMode) &&
             (identical(other.stripeAccountId, stripeAccountId) ||
                 other.stripeAccountId == stripeAccountId) &&
+            (identical(other.cuisineType, cuisineType) ||
+                other.cuisineType == cuisineType) &&
+            const DeepCollectionEquality().equals(
+              other._dietaryTags,
+              _dietaryTags,
+            ) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -487,7 +594,7 @@ class _$TenantImpl extends _Tenant {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     id,
     name,
@@ -495,6 +602,8 @@ class _$TenantImpl extends _Tenant {
     logoUrl,
     coverImageUrl,
     address,
+    latitude,
+    longitude,
     phone,
     email,
     const DeepCollectionEquality().hash(_openingHours),
@@ -504,10 +613,13 @@ class _$TenantImpl extends _Tenant {
     deliveryRadiusKm,
     deliveryMinOrder,
     deliveryEstimatedTimeMin,
+    vacationMode,
     stripeAccountId,
+    cuisineType,
+    const DeepCollectionEquality().hash(_dietaryTags),
     createdAt,
     updatedAt,
-  );
+  ]);
 
   /// Create a copy of Tenant
   /// with the given fields replaced by the non-null parameter values.
@@ -531,6 +643,8 @@ abstract class _Tenant extends Tenant {
     @JsonKey(name: 'logo_url') final String? logoUrl,
     @JsonKey(name: 'cover_image_url') final String? coverImageUrl,
     final String? address,
+    final double? latitude,
+    final double? longitude,
     final String? phone,
     final String? email,
     @JsonKey(name: 'opening_hours') final Map<String, dynamic>? openingHours,
@@ -541,7 +655,10 @@ abstract class _Tenant extends Tenant {
     @JsonKey(name: 'delivery_min_order') final double deliveryMinOrder,
     @JsonKey(name: 'delivery_estimated_time_min')
     final int deliveryEstimatedTimeMin,
+    @JsonKey(name: 'vacation_mode') final bool vacationMode,
     @JsonKey(name: 'stripe_account_id') final String? stripeAccountId,
+    @JsonKey(name: 'cuisine_type') final String? cuisineType,
+    @JsonKey(name: 'dietary_tags') final List<String> dietaryTags,
     @JsonKey(name: 'created_at') required final DateTime createdAt,
     @JsonKey(name: 'updated_at') final DateTime? updatedAt,
   }) = _$TenantImpl;
@@ -563,6 +680,10 @@ abstract class _Tenant extends Tenant {
   String? get coverImageUrl;
   @override
   String? get address;
+  @override
+  double? get latitude;
+  @override
+  double? get longitude;
   @override
   String? get phone;
   @override
@@ -588,8 +709,17 @@ abstract class _Tenant extends Tenant {
   @JsonKey(name: 'delivery_estimated_time_min')
   int get deliveryEstimatedTimeMin;
   @override
+  @JsonKey(name: 'vacation_mode')
+  bool get vacationMode;
+  @override
   @JsonKey(name: 'stripe_account_id')
-  String? get stripeAccountId;
+  String? get stripeAccountId; // Discovery metadata (Phase 10)
+  @override
+  @JsonKey(name: 'cuisine_type')
+  String? get cuisineType;
+  @override
+  @JsonKey(name: 'dietary_tags')
+  List<String> get dietaryTags;
   @override
   @JsonKey(name: 'created_at')
   DateTime get createdAt;

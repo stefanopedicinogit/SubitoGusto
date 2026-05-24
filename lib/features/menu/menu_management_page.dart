@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/menu_item.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'category_dialog.dart';
 import 'menu_item_dialog.dart';
 
@@ -16,12 +17,22 @@ class MenuManagementPage extends ConsumerStatefulWidget {
 
 class _MenuManagementPageState extends ConsumerState<MenuManagementPage> {
   String? _selectedCategoryId;
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     // Use streams for realtime updates
     final categoriesAsync = ref.watch(categoriesStreamProvider);
     final menuItemsAsync = ref.watch(menuItemsStreamProvider);
+    final l = AppLocalizations.of(context);
 
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -41,7 +52,7 @@ class _MenuManagementPageState extends ConsumerState<MenuManagementPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Categorie',
+                          l.menuMgmtCategories,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         IconButton(
@@ -52,7 +63,7 @@ class _MenuManagementPageState extends ConsumerState<MenuManagementPage> {
                               builder: (context) => const CategoryDialog(),
                             );
                           },
-                          tooltip: 'Nuova categoria',
+                          tooltip: l.menuMgmtAddCategory,
                         ),
                       ],
                     ),
@@ -62,17 +73,43 @@ class _MenuManagementPageState extends ConsumerState<MenuManagementPage> {
                     child: categoriesAsync.when(
                       data: (categories) {
                         if (categories.isEmpty) {
-                          return const Center(
-                            child: Text('Nessuna categoria'),
+                          return Center(
+                            child: Text(l.menuMgmtEmptyCategories),
                           );
                         }
+                        final primaryColor = Theme.of(context).colorScheme.primary;
                         return ListView.builder(
-                          itemCount: categories.length,
+                          itemCount: categories.length + 1,
                           itemBuilder: (context, index) {
-                            final category = categories[index];
+                            // First row: "All categories" virtual entry
+                            if (index == 0) {
+                              final isSelected = _selectedCategoryId == null;
+                              return ListTile(
+                                selected: isSelected,
+                                selectedTileColor:
+                                    primaryColor.withValues(alpha: 0.1),
+                                leading: CircleAvatar(
+                                  backgroundColor:
+                                      primaryColor.withValues(alpha: 0.1),
+                                  child: Icon(
+                                    Icons.apps,
+                                    color: primaryColor,
+                                  ),
+                                ),
+                                title: Text(l.menuMgmtAllCategories),
+                                trailing: isSelected
+                                    ? Icon(Icons.check, color: primaryColor)
+                                    : null,
+                                onTap: () {
+                                  setState(() {
+                                    _selectedCategoryId = null;
+                                  });
+                                },
+                              );
+                            }
+                            final category = categories[index - 1];
                             final isSelected =
                                 _selectedCategoryId == category.id;
-                            final primaryColor = Theme.of(context).colorScheme.primary;
                             return ListTile(
                               selected: isSelected,
                               selectedTileColor:
@@ -112,7 +149,8 @@ class _MenuManagementPageState extends ConsumerState<MenuManagementPage> {
                               ),
                               onTap: () {
                                 setState(() {
-                                  _selectedCategoryId = category.id;
+                                  _selectedCategoryId =
+                                      isSelected ? null : category.id;
                                 });
                               },
                             );
@@ -138,34 +176,58 @@ class _MenuManagementPageState extends ConsumerState<MenuManagementPage> {
                   Padding(
                     padding: const EdgeInsets.all(AppSpacing.md),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Piatti',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.search),
-                              onPressed: () {},
-                              tooltip: 'Cerca',
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            FilledButton.icon(
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => MenuItemDialog(
-                                    initialCategoryId: _selectedCategoryId,
+                        Expanded(
+                          child: _isSearching
+                              ? TextField(
+                                  controller: _searchController,
+                                  autofocus: true,
+                                  decoration: InputDecoration(
+                                    hintText: l.menuMgmtSearchHint,
+                                    prefixIcon: const Icon(Icons.search),
+                                    suffixIcon: IconButton(
+                                      icon: const Icon(Icons.close),
+                                      onPressed: () {
+                                        setState(() {
+                                          _isSearching = false;
+                                          _searchQuery = '';
+                                          _searchController.clear();
+                                        });
+                                      },
+                                    ),
+                                    isDense: true,
                                   ),
-                                );
-                              },
-                              icon: const Icon(Icons.add),
-                              label: const Text('Nuovo Piatto'),
-                            ),
-                          ],
+                                  onChanged: (value) {
+                                    setState(() => _searchQuery = value);
+                                  },
+                                )
+                              : Text(
+                                  l.menuMgmtItems,
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                ),
                         ),
+                        if (!_isSearching) ...[
+                          IconButton(
+                            icon: const Icon(Icons.search),
+                            onPressed: () {
+                              setState(() => _isSearching = true);
+                            },
+                            tooltip: l.commonSearch,
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          FilledButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => MenuItemDialog(
+                                  initialCategoryId: _selectedCategoryId,
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.add),
+                            label: Text(l.menuMgmtAddItem),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -173,12 +235,18 @@ class _MenuManagementPageState extends ConsumerState<MenuManagementPage> {
                   Expanded(
                     child: menuItemsAsync.when(
                       data: (items) {
-                        final filteredItems = _selectedCategoryId != null
-                            ? items
-                                .where(
-                                    (i) => i.categoryId == _selectedCategoryId)
-                                .toList()
-                            : items;
+                        final query = _searchQuery.trim().toLowerCase();
+                        final filteredItems = items.where((i) {
+                          if (_selectedCategoryId != null &&
+                              i.categoryId != _selectedCategoryId) {
+                            return false;
+                          }
+                          if (query.isNotEmpty &&
+                              !i.name.toLowerCase().contains(query)) {
+                            return false;
+                          }
+                          return true;
+                        }).toList();
 
                         if (filteredItems.isEmpty) {
                           return Center(
@@ -193,7 +261,7 @@ class _MenuManagementPageState extends ConsumerState<MenuManagementPage> {
                                 ),
                                 const SizedBox(height: AppSpacing.md),
                                 Text(
-                                  'Nessun piatto',
+                                  l.menuMgmtEmptyItems,
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
@@ -212,7 +280,7 @@ class _MenuManagementPageState extends ConsumerState<MenuManagementPage> {
                                     );
                                   },
                                   icon: const Icon(Icons.add),
-                                  label: const Text('Aggiungi piatto'),
+                                  label: Text(l.menuMgmtAddItem),
                                 ),
                               ],
                             ),
@@ -334,7 +402,7 @@ class _MenuItemCard extends StatelessWidget {
                                       BorderRadius.circular(AppRadius.sm),
                                 ),
                                 child: Text(
-                                  'Esaurito',
+                                  AppLocalizations.of(context).menuMgmtUnavailable,
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelSmall
@@ -352,7 +420,7 @@ class _MenuItemCard extends StatelessWidget {
                                       MenuItemDialog(menuItem: item),
                                 );
                               },
-                              tooltip: 'Modifica',
+                              tooltip: AppLocalizations.of(context).commonEdit,
                               visualDensity: VisualDensity.compact,
                             ),
                           ],

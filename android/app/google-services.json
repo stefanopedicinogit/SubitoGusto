@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "155082002517",
+    "project_id": "subitogusto",
+    "storage_bucket": "subitogusto.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:155082002517:android:850a99043e2caf063f04dc",
+        "android_client_info": {
+          "package_name": "com.subitogusto.subito_gusto"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHwa_Ld-Wck1YUyojOI2sVuOlFqh9CIUM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

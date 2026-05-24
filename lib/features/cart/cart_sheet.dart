@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/error_messages.dart';
 import '../../data/models/order.dart';
+import '../../data/providers/supabase_provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'cart_provider.dart';
 
 /// Cart bottom sheet for reviewing and submitting order
@@ -29,6 +32,14 @@ class _CartSheetState extends ConsumerState<CartSheet> {
       // Generate order number
       final orderNumber = 'ORD-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
 
+      // If the diner is signed in as a consumer, link the order to their
+      // customer profile so it shows up in their order history.
+      final auth = ref.read(supabaseAuthProvider).valueOrNull;
+      final consumerId =
+          (auth?.isAuthenticated == true && auth?.isConsumer == true)
+              ? auth?.user?.id
+              : null;
+
       // Create order directly with Supabase to avoid empty ID issues
       final orderResponse = await client.from('orders').insert({
         'tenant_id': cart.tenantId,
@@ -39,6 +50,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
         'discount': 0,
         'total': cart.subtotal,
         'customer_name': _customerName,
+        if (consumerId != null) 'customer_id': consumerId,
       }).select().single();
 
       final createdOrder = Order.fromJson(orderResponse);
@@ -91,7 +103,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore: $e'),
+            content: Text(humanizeError(e, context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -107,47 +119,51 @@ class _CartSheetState extends ConsumerState<CartSheet> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        icon: const Icon(Icons.check_circle, color: AppColors.success, size: 64),
-        title: const Text('Ordine Inviato!'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Il tuo ordine #${order.orderNumber} e stato ricevuto.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Totale: ${order.formatTotal()}',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Riceverai il tuo ordine a breve.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-              textAlign: TextAlign.center,
+      builder: (context) {
+        final l = AppLocalizations.of(context);
+        return AlertDialog(
+          icon: const Icon(Icons.check_circle, color: AppColors.success, size: 64),
+          title: Text(l.cartOrderSubmittedTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l.cartOrderSubmittedMessage(order.orderNumber),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                l.cartOrderSubmittedTotal(order.formatTotal()),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                l.cartOrderSubmittedFooter,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(l.cartOk),
             ),
           ],
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final cart = ref.watch(cartProvider);
+    final l = AppLocalizations.of(context);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -180,7 +196,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                     Icon(Icons.shopping_cart, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(width: AppSpacing.sm),
                     Text(
-                      'Il tuo ordine',
+                      l.cartTitle,
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const Spacer(),
@@ -189,7 +205,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                         onPressed: () {
                           ref.read(cartProvider.notifier).clear();
                         },
-                        child: const Text('Svuota'),
+                        child: Text(l.cartClear),
                       ),
                   ],
                 ),
@@ -236,6 +252,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
   }
 
   Widget _buildEmptyCart() {
+    final l = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -247,14 +264,14 @@ class _CartSheetState extends ConsumerState<CartSheet> {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'Il carrello e vuoto',
+            l.cartEmpty,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: AppColors.textSecondary,
                 ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Aggiungi piatti dal menu',
+            l.cartEmptyHint,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -265,21 +282,22 @@ class _CartSheetState extends ConsumerState<CartSheet> {
   }
 
   Widget _buildCustomerNameField() {
+    final l = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Il tuo nome (opzionale)',
+            l.cartCustomerNameLabel,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.sm),
           TextField(
             onChanged: (value) => _customerName = value.isEmpty ? null : value,
-            decoration: const InputDecoration(
-              hintText: 'Per facilitare la consegna',
-              prefixIcon: Icon(Icons.person_outline),
+            decoration: InputDecoration(
+              hintText: l.cartCustomerNameHint,
+              prefixIcon: const Icon(Icons.person_outline),
             ),
           ),
         ],
@@ -288,6 +306,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
   }
 
   Widget _buildBottomBar(CartState cart) {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -309,7 +328,7 @@ class _CartSheetState extends ConsumerState<CartSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Totale',
+                  l.checkoutTotal,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 Text(
@@ -339,9 +358,9 @@ class _CartSheetState extends ConsumerState<CartSheet> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text(
-                        'Invia Ordine',
-                        style: TextStyle(
+                    : Text(
+                        l.cartSubmit,
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
@@ -489,10 +508,10 @@ class _FixedMenuCartItemTile extends ConsumerWidget {
               child: Container(
                 width: 60,
                 height: 60,
-                color: AppColors.burgundy.withValues(alpha: 0.1),
-                child: const Icon(
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                child: Icon(
                   Icons.restaurant_menu,
-                  color: AppColors.burgundy,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ),

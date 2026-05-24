@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/error_messages.dart';
 import '../../data/models/user.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Dialog for creating or editing a user
 class UserDialog extends ConsumerStatefulWidget {
@@ -28,12 +30,28 @@ class _UserDialogState extends ConsumerState<UserDialog> {
 
   bool get isEditing => widget.user != null;
 
-  static const _roles = [
-    ('admin', 'Amministratore', Icons.admin_panel_settings),
-    ('manager', 'Manager', Icons.manage_accounts),
-    ('waiter', 'Cameriere', Icons.person),
-    ('kitchen', 'Cucina', Icons.restaurant),
-  ];
+  static const _roleKeys = ['admin', 'manager', 'waiter', 'kitchen'];
+
+  String _roleLabel(BuildContext context, String role) {
+    final l = AppLocalizations.of(context);
+    switch (role) {
+      case 'admin': return l.userDialogRoleAdmin;
+      case 'manager': return l.userDialogRoleManager;
+      case 'waiter': return l.userDialogRoleWaiter;
+      case 'kitchen': return l.userDialogRoleKitchen;
+      default: return role;
+    }
+  }
+
+  IconData _roleIcon(String role) {
+    switch (role) {
+      case 'admin': return Icons.admin_panel_settings;
+      case 'manager': return Icons.manage_accounts;
+      case 'waiter': return Icons.person;
+      case 'kitchen': return Icons.restaurant;
+      default: return Icons.person;
+    }
+  }
 
   @override
   void initState() {
@@ -160,7 +178,7 @@ class _UserDialogState extends ConsumerState<UserDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isEditing ? 'Utente aggiornato' : 'Utente creato con successo',
+              isEditing ? AppLocalizations.of(context).userDialogUpdated : AppLocalizations.of(context).userDialogCreated,
             ),
             backgroundColor: AppColors.success,
           ),
@@ -181,7 +199,7 @@ class _UserDialogState extends ConsumerState<UserDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore: $e'),
+            content: Text(humanizeError(e, context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -209,7 +227,7 @@ class _UserDialogState extends ConsumerState<UserDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(isEditing ? 'Modifica Utente' : 'Nuovo Utente'),
+      title: Text(isEditing ? AppLocalizations.of(context).userDialogEdit : AppLocalizations.of(context).userDialogNew),
       content: SizedBox(
         width: 450,
         child: Form(
@@ -225,8 +243,8 @@ class _UserDialogState extends ConsumerState<UserDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _firstNameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nome',
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).userDialogFirstName,
                           prefixIcon: Icon(Icons.person_outline),
                         ),
                         textCapitalization: TextCapitalization.words,
@@ -236,8 +254,8 @@ class _UserDialogState extends ConsumerState<UserDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _lastNameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Cognome',
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).userDialogLastName,
                           prefixIcon: Icon(Icons.person_outline),
                         ),
                         textCapitalization: TextCapitalization.words,
@@ -251,7 +269,7 @@ class _UserDialogState extends ConsumerState<UserDialog> {
                   controller: _emailController,
                   enabled: !isEditing, // Can't change email after creation
                   decoration: InputDecoration(
-                    labelText: 'Email *',
+                    labelText: AppLocalizations.of(context).userDialogEmail,
                     prefixIcon: const Icon(Icons.email_outlined),
                     helperText: isEditing ? 'L\'email non può essere modificata' : null,
                   ),
@@ -261,7 +279,7 @@ class _UserDialogState extends ConsumerState<UserDialog> {
                       return 'L\'email è obbligatoria';
                     }
                     if (!value.contains('@') || !value.contains('.')) {
-                      return 'Inserisci un\'email valida';
+                      return AppLocalizations.of(context).userDialogEmailInvalid;
                     }
                     return null;
                   },
@@ -273,7 +291,7 @@ class _UserDialogState extends ConsumerState<UserDialog> {
                     controller: _passwordController,
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
-                      labelText: 'Password *',
+                      labelText: AppLocalizations.of(context).userDialogPassword,
                       prefixIcon: const Icon(Icons.lock_outlined),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -285,7 +303,7 @@ class _UserDialogState extends ConsumerState<UserDialog> {
                           setState(() => _obscurePassword = !_obscurePassword);
                         },
                       ),
-                      helperText: 'Minimo 6 caratteri',
+                      helperText: AppLocalizations.of(context).userDialogPasswordHint,
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -301,30 +319,30 @@ class _UserDialogState extends ConsumerState<UserDialog> {
                 ],
                 // Role selector
                 Text(
-                  'Ruolo *',
+                  AppLocalizations.of(context).userDialogRole,
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Wrap(
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
-                  children: _roles.map((role) {
-                    final isSelected = _role == role.$1;
+                  children: _roleKeys.map((role) {
+                    final isSelected = _role == role;
                     return ChoiceChip(
                       selected: isSelected,
                       onSelected: (selected) {
                         if (selected) {
-                          setState(() => _role = role.$1);
+                          setState(() => _role = role);
                         }
                       },
                       avatar: Icon(
-                        role.$3,
+                        _roleIcon(role),
                         size: 18,
                         color: isSelected
                             ? Theme.of(context).colorScheme.onPrimary
                             : Theme.of(context).colorScheme.primary,
                       ),
-                      label: Text(role.$2),
+                      label: Text(_roleLabel(context, role)),
                       selectedColor: Theme.of(context).colorScheme.primary,
                       labelStyle: TextStyle(
                         color: isSelected
@@ -352,7 +370,7 @@ class _UserDialogState extends ConsumerState<UserDialog> {
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
-                          _getRoleDescription(),
+                          _getRoleDescription(context),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ),
@@ -362,11 +380,11 @@ class _UserDialogState extends ConsumerState<UserDialog> {
                 const SizedBox(height: AppSpacing.md),
                 // Active toggle
                 SwitchListTile(
-                  title: const Text('Utente attivo'),
+                  title: Text(AppLocalizations.of(context).userDialogActive),
                   subtitle: Text(
                     _isActive
-                        ? 'L\'utente può accedere al sistema'
-                        : 'L\'utente non può accedere',
+                        ? AppLocalizations.of(context).userDialogActiveSubtitle
+                        : AppLocalizations.of(context).userDialogInactiveSubtitle,
                   ),
                   value: _isActive,
                   onChanged: (value) => setState(() => _isActive = value),
@@ -380,7 +398,7 @@ class _UserDialogState extends ConsumerState<UserDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
+          child: Text(AppLocalizations.of(context).commonCancel),
         ),
         FilledButton.icon(
           onPressed: _isLoading ? null : _save,
@@ -394,22 +412,23 @@ class _UserDialogState extends ConsumerState<UserDialog> {
                   ),
                 )
               : const Icon(Icons.check),
-          label: Text(isEditing ? 'Salva' : 'Crea Utente'),
+          label: Text(isEditing ? AppLocalizations.of(context).commonSave : AppLocalizations.of(context).userDialogCreate),
         ),
       ],
     );
   }
 
-  String _getRoleDescription() {
+  String _getRoleDescription(BuildContext context) {
+    final l = AppLocalizations.of(context);
     switch (_role) {
       case 'admin':
-        return 'Accesso completo: gestione menu, tavoli, ordini, utenti e impostazioni.';
+        return l.userDialogRoleAdminDesc;
       case 'manager':
-        return 'Gestione menu, tavoli e ordini. Non può gestire utenti e impostazioni.';
+        return l.userDialogRoleManagerDesc;
       case 'waiter':
-        return 'Può visualizzare e gestire solo gli ordini. Ideale per camerieri.';
+        return l.userDialogRoleWaiterDesc;
       case 'kitchen':
-        return 'Visualizza solo gli ordini da preparare. Ideale per il personale di cucina.';
+        return l.userDialogRoleKitchenDesc;
       default:
         return '';
     }

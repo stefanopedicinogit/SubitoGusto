@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'analytics_provider.dart';
 
 /// Analytics Dashboard Page
@@ -63,7 +64,7 @@ class _DateRangeSelector extends ConsumerWidget {
       child: Row(
         children: [
           Text(
-            'Periodo:',
+            AppLocalizations.of(context).analyticsPeriod,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(width: AppSpacing.md),
@@ -72,12 +73,13 @@ class _DateRangeSelector extends ConsumerWidget {
             return Padding(
               padding: const EdgeInsets.only(right: AppSpacing.sm),
               child: ChoiceChip(
-                label: Text(range.label),
+                label: Text(range.label(context)),
                 selected: isSelected,
                 onSelected: (_) {
                   ref.read(analyticsDateRangeProvider.notifier).state = range;
                 },
                 selectedColor: Theme.of(context).colorScheme.primary,
+                checkmarkColor: Colors.white,
                 labelStyle: TextStyle(
                   color: isSelected ? Colors.white : null,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -89,7 +91,7 @@ class _DateRangeSelector extends ConsumerWidget {
           IconButton(
             onPressed: () => ref.invalidate(analyticsDataProvider),
             icon: const Icon(Icons.refresh),
-            tooltip: 'Aggiorna dati',
+            tooltip: AppLocalizations.of(context).analyticsRefresh,
           ),
         ],
       ),
@@ -176,7 +178,7 @@ class _KPICardsRow extends StatelessWidget {
       children: [
         Expanded(
           child: _KPICard(
-            title: 'Ricavi Totali',
+            title: AppLocalizations.of(context).analyticsTotalRevenue,
             value: currencyFormat.format(data.totalRevenue),
             changePercent: data.revenueChangePercent,
             icon: Icons.euro,
@@ -186,17 +188,17 @@ class _KPICardsRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _KPICard(
-            title: 'Ordini Completati',
+            title: AppLocalizations.of(context).analyticsCompletedOrders,
             value: data.totalOrders.toString(),
             changePercent: data.ordersChangePercent,
             icon: Icons.receipt_long,
-            color: AppColors.burgundy,
+            color: Theme.of(context).colorScheme.primary,
           ),
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _KPICard(
-            title: 'Scontrino Medio',
+            title: AppLocalizations.of(context).analyticsAvgTicket,
             value: currencyFormat.format(data.averageOrderValue),
             icon: Icons.trending_up,
             color: AppColors.gold,
@@ -205,7 +207,7 @@ class _KPICardsRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _KPICard(
-            title: 'Piatti Venduti',
+            title: AppLocalizations.of(context).analyticsItemsSold,
             value: data.orderItems.fold<int>(0, (sum, i) => sum + i.quantity).toString(),
             icon: Icons.restaurant,
             color: AppColors.statusPreparing,
@@ -336,7 +338,7 @@ class _RevenueChart extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Andamento Ricavi',
+                  AppLocalizations.of(context).analyticsRevenueTrend,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const Spacer(),
@@ -500,7 +502,7 @@ class _OrdersByStatusCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Ordini per Stato',
+              AppLocalizations.of(context).analyticsOrdersByStatus,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -586,7 +588,7 @@ class _TopSellingCard extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Piatti Più Venduti',
+                  AppLocalizations.of(context).analyticsTopItems,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const Spacer(),
@@ -683,11 +685,11 @@ class _PeakHoursCard extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Ore di Punta',
+                  AppLocalizations.of(context).analyticsPeakHours,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const Spacer(),
-                const Icon(Icons.access_time, color: AppColors.burgundy, size: 20),
+                Icon(Icons.access_time, color: Theme.of(context).colorScheme.primary, size: 20),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
@@ -722,7 +724,7 @@ class _PeakHoursCard extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: isHot
                                       ? AppColors.error
-                                      : AppColors.burgundy.withValues(alpha: 0.7),
+                                      : Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
                                   borderRadius: const BorderRadius.vertical(
                                     top: Radius.circular(3),
                                   ),
@@ -769,7 +771,7 @@ class _CategoryPerformanceCard extends StatelessWidget {
 
     // Colors for pie chart segments
     final colors = [
-      AppColors.burgundy,
+      Theme.of(context).colorScheme.primary,
       AppColors.gold,
       AppColors.success,
       AppColors.statusConfirmed,
@@ -786,7 +788,7 @@ class _CategoryPerformanceCard extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Per Categoria',
+                  AppLocalizations.of(context).analyticsByCategory,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const Spacer(),

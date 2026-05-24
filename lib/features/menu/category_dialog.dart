@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/error_messages.dart';
 import '../../data/models/category.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Dialog for creating or editing a category
 class CategoryDialog extends ConsumerStatefulWidget {
@@ -93,7 +95,7 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isEditing ? 'Categoria aggiornata' : 'Categoria creata',
+              isEditing ? AppLocalizations.of(context).categoryDialogUpdated : AppLocalizations.of(context).categoryDialogCreated,
             ),
             backgroundColor: AppColors.success,
           ),
@@ -103,7 +105,7 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore: $e'),
+            content: Text(humanizeError(e, context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -121,22 +123,19 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Elimina Categoria'),
-        content: Text(
-          'Sei sicuro di voler eliminare "${widget.category!.name}"?\n\n'
-          'Attenzione: tutti i piatti in questa categoria dovranno essere riassegnati.',
-        ),
+        title: Text(AppLocalizations.of(context).categoryDialogDeleteConfirm),
+        content: Text('"${widget.category!.name}"\n\n${AppLocalizations.of(context).categoryDialogDeleteWarn}'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annulla'),
+            child: Text(AppLocalizations.of(context).commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.error,
             ),
-            child: const Text('Elimina'),
+            child: Text(AppLocalizations.of(context).commonDelete),
           ),
         ],
       ),
@@ -158,8 +157,8 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
       if (mounted) {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Categoria eliminata'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).categoryDialogDeleted),
             backgroundColor: AppColors.success,
           ),
         );
@@ -168,7 +167,7 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore: $e'),
+            content: Text(humanizeError(e, context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -183,7 +182,7 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(isEditing ? 'Modifica Categoria' : 'Nuova Categoria'),
+      title: Text(isEditing ? AppLocalizations.of(context).categoryDialogEditTitle : AppLocalizations.of(context).categoryDialogNewTitle),
       content: SizedBox(
         width: 400,
         child: Form(
@@ -194,8 +193,8 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
               children: [
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome *',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).categoryDialogNameLabel,
                     hintText: 'Es: Antipasti, Primi Piatti...',
                   ),
                   validator: (value) {
@@ -209,9 +208,9 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Descrizione',
-                    hintText: 'Descrizione opzionale...',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).categoryDialogDescription,
+                    hintText: AppLocalizations.of(context).categoryDialogDescriptionHint,
                   ),
                   maxLines: 2,
                 ),
@@ -227,16 +226,16 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _sortOrderController,
-                  decoration: const InputDecoration(
-                    labelText: 'Ordine',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).categoryDialogOrder,
                     hintText: '0',
                   ),
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 SwitchListTile(
-                  title: const Text('Attiva'),
-                  subtitle: const Text('Visibile nel menu'),
+                  title: Text(AppLocalizations.of(context).categoryDialogActive),
+                  subtitle: Text(AppLocalizations.of(context).categoryDialogActiveSub),
                   value: _isActive,
                   onChanged: (value) => setState(() => _isActive = value),
                   contentPadding: EdgeInsets.zero,
@@ -250,15 +249,15 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
         if (isEditing)
           TextButton(
             onPressed: _isLoading ? null : _delete,
-            child: const Text(
-              'Elimina',
-              style: TextStyle(color: AppColors.error),
+            child: Text(
+              AppLocalizations.of(context).commonDelete,
+              style: const TextStyle(color: AppColors.error),
             ),
           ),
         const Spacer(),
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
+          child: Text(AppLocalizations.of(context).commonCancel),
         ),
         FilledButton(
           onPressed: _isLoading ? null : _save,
@@ -271,7 +270,7 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
                     color: Colors.white,
                   ),
                 )
-              : Text(isEditing ? 'Salva' : 'Crea'),
+              : Text(isEditing ? AppLocalizations.of(context).commonSave : AppLocalizations.of(context).tableDialogCreate),
         ),
       ],
     );

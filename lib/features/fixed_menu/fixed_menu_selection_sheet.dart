@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/error_messages.dart';
 import '../../data/models/fixed_menu.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../cart/cart_provider.dart';
 
 /// Bottom sheet for selecting choices from a fixed menu
@@ -40,7 +42,7 @@ class _FixedMenuSelectionSheetState
       child: fullMenuAsync.when(
         data: (fullMenu) {
           if (fullMenu == null) {
-            return const Center(child: Text('Menu non trovato'));
+            return Center(child: Text(AppLocalizations.of(context).fixedMenuSelectionMenuNotFound));
           }
           return _buildContent(context, fullMenu);
         },
@@ -50,7 +52,7 @@ class _FixedMenuSelectionSheetState
         ),
         error: (e, _) => SizedBox(
           height: 300,
-          child: Center(child: Text('Errore: $e')),
+          child: Center(child: Text(humanizeError(e, context))),
         ),
       ),
     );
@@ -192,8 +194,8 @@ class _FixedMenuSelectionSheetState
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: Text(
-                    'Seleziona tutte le portate obbligatorie',
-                    style: TextStyle(
+                    AppLocalizations.of(context).fixedMenuSelectionSelectAllRequired,
+                    style: const TextStyle(
                       color: AppColors.warning,
                       fontSize: 12,
                     ),
@@ -216,7 +218,7 @@ class _FixedMenuSelectionSheetState
                         )
                       : const Icon(Icons.add_shopping_cart),
                   label: Text(
-                    'Aggiungi al carrello - €${totalPrice.toStringAsFixed(2)}',
+                    AppLocalizations.of(context).fixedMenuSelectionAddToCart(totalPrice.toStringAsFixed(2)),
                   ),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
@@ -277,7 +279,7 @@ class _FixedMenuSelectionSheetState
 
     messenger.showSnackBar(
       SnackBar(
-        content: Text('${widget.menu.name} aggiunto al carrello'),
+        content: Text(AppLocalizations.of(context).fixedMenuSelectionAddedToCart(widget.menu.name)),
         backgroundColor: AppColors.success,
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
@@ -300,6 +302,7 @@ class _CourseSelectionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final course = courseWithChoices.course;
     final choices = courseWithChoices.availableChoices;
 
@@ -329,14 +332,14 @@ class _CourseSelectionSection extends StatelessWidget {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.burgundy.withValues(alpha: 0.1),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: Text(
-                    'Obbligatorio',
+                    l.fixedMenuCoursesRequired,
                     style: TextStyle(
                       fontSize: 10,
-                      color: AppColors.burgundy,
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -352,8 +355,8 @@ class _CourseSelectionSection extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: Text(
-                    'Opzionale',
-                    style: TextStyle(
+                    l.fixedMenuSelectionOptional,
+                    style: const TextStyle(
                       fontSize: 10,
                       color: AppColors.textSecondary,
                     ),
@@ -377,8 +380,8 @@ class _CourseSelectionSection extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Text(
-                'Nessuna scelta disponibile per questa portata',
-                style: TextStyle(
+                l.fixedMenuSelectionNoChoices,
+                style: const TextStyle(
                   color: AppColors.textSecondary,
                   fontStyle: FontStyle.italic,
                   fontSize: 13,
@@ -456,8 +459,8 @@ class _CourseSelectionSection extends StatelessWidget {
                             ),
                             if (choice.isDefault)
                               Text(
-                                'Scelta consigliata',
-                                style: TextStyle(
+                                l.fixedMenuSelectionRecommended,
+                                style: const TextStyle(
                                   fontSize: 11,
                                   color: AppColors.gold,
                                   fontWeight: FontWeight.w500,

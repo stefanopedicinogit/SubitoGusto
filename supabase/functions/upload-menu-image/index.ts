@@ -119,6 +119,7 @@ serve(async (req) => {
       .upload(storagePath, fileBuffer, {
         contentType: file.type,
         upsert: true,
+        cacheControl: '31536000',
       })
 
     if (uploadError) {
@@ -129,8 +130,8 @@ serve(async (req) => {
       )
     }
 
-    // Build public URL
-    const publicUrl = `${supabaseUrl}/storage/v1/object/public/${BUCKET}/${storagePath}`
+    // Build public URL with cache-bust version param so re-uploads invalidate browser cache
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/${BUCKET}/${storagePath}?v=${Date.now()}`
 
     // Update the record's image_url
     const { error: updateError } = await supabaseAdmin

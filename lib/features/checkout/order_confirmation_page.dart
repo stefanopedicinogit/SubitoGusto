@@ -3,8 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/distance.dart';
+import '../../core/utils/order_status_label.dart';
 import '../../data/models/delivery_order.dart';
+import '../../data/models/tenant.dart';
+import '../../data/providers/consumer_providers.dart';
 import '../../data/providers/supabase_provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Provider to fetch a single delivery order by ID
 final deliveryOrderByIdProvider =
@@ -37,9 +42,20 @@ class OrderConfirmationPage extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.xl),
               child: orderAsync.when(
-                data: (order) => _buildContent(context, order),
+                data: (order) {
+                  if (order == null) return _buildContent(context, null, null);
+                  final tenantAsync =
+                      ref.watch(restaurantDetailProvider(order.tenantId));
+                  return _buildContent(
+                    context,
+                    order,
+                    tenantAsync.valueOrNull == null
+                        ? null
+                        : _formatEta(order, tenantAsync.valueOrNull!),
+                  );
+                },
                 loading: () => const CircularProgressIndicator(),
-                error: (e, _) => _buildContent(context, null),
+                error: (e, _) => _buildContent(context, null, null),
               ),
             ),
           ),
@@ -48,7 +64,22 @@ class OrderConfirmationPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, DeliveryOrder? order) {
+  static String _formatEta(DeliveryOrder order, Tenant tenant) {
+    final double? distanceKm = (order.deliveryLatitude != null &&
+            order.deliveryLongitude != null &&
+            tenant.hasCoordinates)
+        ? haversineKm(
+            tenant.latitude!,
+            tenant.longitude!,
+            order.deliveryLatitude!,
+            order.deliveryLongitude!,
+          )
+        : null;
+    return tenant.formatEstimatedTotal(distanceKm);
+  }
+
+  Widget _buildContent(BuildContext context, DeliveryOrder? order, String? eta) {
+    final l = AppLocalizations.of(context);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -69,7 +100,7 @@ class OrderConfirmationPage extends ConsumerWidget {
         const SizedBox(height: AppSpacing.xl),
 
         Text(
-          'Ordine confermato!',
+          l.orderConfirmedTitle,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -77,7 +108,7 @@ class OrderConfirmationPage extends ConsumerWidget {
         const SizedBox(height: AppSpacing.sm),
 
         Text(
-          'Il tuo ordine è stato ricevuto e sarà\npreparato a breve.',
+          l.orderConfirmedSubtitle,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AppColors.textSecondary,
@@ -94,32 +125,34 @@ class OrderConfirmationPage extends ConsumerWidget {
                 children: [
                   _DetailRow(
                     icon: Icons.receipt_long,
-                    label: 'Ordine',
+                    label: l.orderConfirmedOrder,
                     value: '#${order.id.substring(0, 8).toUpperCase()}',
                   ),
                   const Divider(height: AppSpacing.lg),
                   _DetailRow(
                     icon: Icons.euro,
-                    label: 'Totale',
+                    label: l.orderConfirmedTotal,
                     value: '\u20ac ${order.total.toStringAsFixed(2)}',
                   ),
                   const Divider(height: AppSpacing.lg),
-                  _DetailRow(
-                    icon: Icons.access_time,
-                    label: 'Tempo stimato',
-                    value: '30-45 min',
-                  ),
-                  const Divider(height: AppSpacing.lg),
+                  if (eta != null) ...[
+                    _DetailRow(
+                      icon: Icons.access_time,
+                      label: l.orderConfirmedEta,
+                      value: eta,
+                    ),
+                    const Divider(height: AppSpacing.lg),
+                  ],
                   _DetailRow(
                     icon: Icons.location_on,
-                    label: 'Consegna',
+                    label: l.orderConfirmedDelivery,
                     value: order.deliveryFullAddress,
                   ),
                   const Divider(height: AppSpacing.lg),
                   _DetailRow(
                     icon: Icons.info_outline,
-                    label: 'Stato',
-                    value: order.statusDisplayName,
+                    label: l.orderConfirmedStatus,
+                    value: localizedOrderStatus(context, order.status),
                   ),
                 ],
               ),
@@ -134,7 +167,7 @@ class OrderConfirmationPage extends ConsumerWidget {
           child: FilledButton.icon(
             onPressed: () => context.go('/consumer/orders'),
             icon: const Icon(Icons.list_alt),
-            label: const Text('Vedi i miei ordini'),
+            label: Text(l.orderConfirmedSeeOrders),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
             ),
@@ -146,7 +179,7 @@ class OrderConfirmationPage extends ConsumerWidget {
           child: OutlinedButton.icon(
             onPressed: () => context.go('/marketplace'),
             icon: const Icon(Icons.storefront),
-            label: const Text('Torna al marketplace'),
+            label: Text(l.orderConfirmedBackToMarketplace),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
             ),

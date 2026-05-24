@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/error_messages.dart';
 import '../../data/models/table.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Dialog for creating or editing a table
 class TableDialog extends ConsumerStatefulWidget {
@@ -26,11 +28,17 @@ class _TableDialogState extends ConsumerState<TableDialog> {
 
   bool get isEditing => widget.table != null;
 
-  static const _statuses = [
-    ('available', 'Libero'),
-    ('occupied', 'Occupato'),
-    ('reserved', 'Prenotato'),
-  ];
+  static const _statusKeys = ['available', 'occupied', 'reserved'];
+
+  String _statusLabel(BuildContext context, String key) {
+    final l = AppLocalizations.of(context);
+    switch (key) {
+      case 'available': return l.tablesStatusFree;
+      case 'occupied': return l.tablesStatusOccupied;
+      case 'reserved': return l.tablesStatusReserved;
+      default: return key;
+    }
+  }
 
   @override
   void initState() {
@@ -90,7 +98,7 @@ class _TableDialogState extends ConsumerState<TableDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isEditing ? 'Tavolo aggiornato' : 'Tavolo creato',
+              isEditing ? AppLocalizations.of(context).tableDialogUpdated : AppLocalizations.of(context).tableDialogCreated,
             ),
             backgroundColor: AppColors.success,
           ),
@@ -100,7 +108,7 @@ class _TableDialogState extends ConsumerState<TableDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore: $e'),
+            content: Text(humanizeError(e, context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -117,23 +125,20 @@ class _TableDialogState extends ConsumerState<TableDialog> {
 
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Elimina Tavolo'),
-        content: Text(
-          'Sei sicuro di voler eliminare "${widget.table!.name}"?\n\n'
-          'Il QR code associato non funzionera piu.',
-        ),
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(AppLocalizations.of(dialogCtx).tablesDeleteConfirm),
+        content: Text('"${widget.table!.name}"'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annulla'),
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: Text(AppLocalizations.of(dialogCtx).commonCancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.error,
             ),
-            child: const Text('Elimina'),
+            child: Text(AppLocalizations.of(dialogCtx).commonDelete),
           ),
         ],
       ),
@@ -153,8 +158,8 @@ class _TableDialogState extends ConsumerState<TableDialog> {
       if (mounted) {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tavolo eliminato'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).tableDialogDeleted),
             backgroundColor: AppColors.success,
           ),
         );
@@ -163,7 +168,7 @@ class _TableDialogState extends ConsumerState<TableDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore: $e'),
+            content: Text(humanizeError(e, context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -178,7 +183,7 @@ class _TableDialogState extends ConsumerState<TableDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(isEditing ? 'Modifica Tavolo' : 'Nuovo Tavolo'),
+      title: Text(isEditing ? AppLocalizations.of(context).tableDialogEdit : AppLocalizations.of(context).tableDialogNew),
       content: SizedBox(
         width: 400,
         child: Form(
@@ -189,8 +194,8 @@ class _TableDialogState extends ConsumerState<TableDialog> {
               children: [
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome *',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).tableDialogName,
                     hintText: 'Es: Tavolo 1, Tavolo Terrazza...',
                   ),
                   validator: (value) {
@@ -207,18 +212,18 @@ class _TableDialogState extends ConsumerState<TableDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _capacityController,
-                        decoration: const InputDecoration(
-                          labelText: 'Posti *',
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).tableDialogSeats,
                           hintText: '4',
                         ),
                         keyboardType: TextInputType.number,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Inserisci i posti';
+                            return AppLocalizations.of(context).tableDialogSeatsRequired;
                           }
                           final capacity = int.tryParse(value);
                           if (capacity == null || capacity < 1) {
-                            return 'Valore non valido';
+                            return AppLocalizations.of(context).tableDialogInvalidNumber;
                           }
                           return null;
                         },
@@ -228,8 +233,8 @@ class _TableDialogState extends ConsumerState<TableDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _zoneController,
-                        decoration: const InputDecoration(
-                          labelText: 'Zona',
+                        decoration: InputDecoration(
+                          labelText: AppLocalizations.of(context).tableDialogZone,
                           hintText: 'Es: Terrazza, Interno...',
                         ),
                       ),
@@ -239,24 +244,24 @@ class _TableDialogState extends ConsumerState<TableDialog> {
                 const SizedBox(height: AppSpacing.md),
                 DropdownButtonFormField<String>(
                   value: _status,
-                  decoration: const InputDecoration(
-                    labelText: 'Stato',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).tableDialogState,
                   ),
-                  items: _statuses.map((s) {
+                  items: _statusKeys.map((key) {
                     return DropdownMenuItem(
-                      value: s.$1,
+                      value: key,
                       child: Row(
                         children: [
                           Container(
                             width: 12,
                             height: 12,
                             decoration: BoxDecoration(
-                              color: _getStatusColor(s.$1),
+                              color: _getStatusColor(key),
                               shape: BoxShape.circle,
                             ),
                           ),
                           const SizedBox(width: AppSpacing.sm),
-                          Text(s.$2),
+                          Text(_statusLabel(context, key)),
                         ],
                       ),
                     );
@@ -269,8 +274,8 @@ class _TableDialogState extends ConsumerState<TableDialog> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 SwitchListTile(
-                  title: const Text('Attivo'),
-                  subtitle: const Text('Visibile e utilizzabile'),
+                  title: Text(AppLocalizations.of(context).tableDialogActive),
+                  subtitle: Text(AppLocalizations.of(context).tableDialogActiveSub),
                   value: _isActive,
                   onChanged: (value) => setState(() => _isActive = value),
                   contentPadding: EdgeInsets.zero,
@@ -291,9 +296,9 @@ class _TableDialogState extends ConsumerState<TableDialog> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Codice QR',
-                                style: TextStyle(
+                              Text(
+                                AppLocalizations.of(context).tableDialogQrCode,
+                                style: const TextStyle(
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.textSecondary,
                                 ),
@@ -320,15 +325,15 @@ class _TableDialogState extends ConsumerState<TableDialog> {
         if (isEditing)
           TextButton(
             onPressed: _isLoading ? null : _delete,
-            child: const Text(
-              'Elimina',
-              style: TextStyle(color: AppColors.error),
+            child: Text(
+              AppLocalizations.of(context).commonDelete,
+              style: const TextStyle(color: AppColors.error),
             ),
           ),
         const Spacer(),
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
+          child: Text(AppLocalizations.of(context).commonCancel),
         ),
         FilledButton(
           onPressed: _isLoading ? null : _save,
@@ -341,7 +346,7 @@ class _TableDialogState extends ConsumerState<TableDialog> {
                     color: Colors.white,
                   ),
                 )
-              : Text(isEditing ? 'Salva' : 'Crea'),
+              : Text(isEditing ? AppLocalizations.of(context).commonSave : AppLocalizations.of(context).tableDialogCreate),
         ),
       ],
     );

@@ -43,6 +43,11 @@ function initStripePayment(publishableKey, clientSecret, elementId) {
       type: 'tabs',
       defaultCollapsed: false,
     },
+    wallets: {
+      link: 'never',
+      applePay: 'never',
+      googlePay: 'never',
+    },
   });
   paymentElement.mount(container);
   return true;

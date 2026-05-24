@@ -13,6 +13,8 @@ _$TenantImpl _$$TenantImplFromJson(Map<String, dynamic> json) => _$TenantImpl(
   logoUrl: json['logo_url'] as String?,
   coverImageUrl: json['cover_image_url'] as String?,
   address: json['address'] as String?,
+  latitude: (json['latitude'] as num?)?.toDouble(),
+  longitude: (json['longitude'] as num?)?.toDouble(),
   phone: json['phone'] as String?,
   email: json['email'] as String?,
   openingHours: json['opening_hours'] as Map<String, dynamic>?,
@@ -23,7 +25,14 @@ _$TenantImpl _$$TenantImplFromJson(Map<String, dynamic> json) => _$TenantImpl(
   deliveryMinOrder: (json['delivery_min_order'] as num?)?.toDouble() ?? 0,
   deliveryEstimatedTimeMin:
       (json['delivery_estimated_time_min'] as num?)?.toInt() ?? 45,
+  vacationMode: json['vacation_mode'] as bool? ?? false,
   stripeAccountId: json['stripe_account_id'] as String?,
+  cuisineType: json['cuisine_type'] as String?,
+  dietaryTags:
+      (json['dietary_tags'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const <String>[],
   createdAt: DateTime.parse(json['created_at'] as String),
   updatedAt: json['updated_at'] == null
       ? null
@@ -38,6 +47,8 @@ Map<String, dynamic> _$$TenantImplToJson(_$TenantImpl instance) =>
       'logo_url': instance.logoUrl,
       'cover_image_url': instance.coverImageUrl,
       'address': instance.address,
+      'latitude': instance.latitude,
+      'longitude': instance.longitude,
       'phone': instance.phone,
       'email': instance.email,
       'opening_hours': instance.openingHours,
@@ -47,7 +58,10 @@ Map<String, dynamic> _$$TenantImplToJson(_$TenantImpl instance) =>
       'delivery_radius_km': instance.deliveryRadiusKm,
       'delivery_min_order': instance.deliveryMinOrder,
       'delivery_estimated_time_min': instance.deliveryEstimatedTimeMin,
+      'vacation_mode': instance.vacationMode,
       'stripe_account_id': instance.stripeAccountId,
+      'cuisine_type': instance.cuisineType,
+      'dietary_tags': instance.dietaryTags,
       'created_at': instance.createdAt.toIso8601String(),
       'updated_at': instance.updatedAt?.toIso8601String(),
     };

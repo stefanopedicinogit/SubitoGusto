@@ -3,14 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/utils/responsive.dart';
+import 'data/providers/locale_provider.dart';
 import 'data/providers/settings_provider.dart';
 import 'data/providers/tenant_theme_provider.dart';
 import 'core/widgets/app_shell.dart';
 import 'core/widgets/app_shell_mobile.dart';
+import 'core/widgets/push_handler.dart';
+import 'l10n/generated/app_localizations.dart';
 import 'data/providers/supabase_provider.dart';
 import 'features/auth/login_page.dart';
 import 'features/auth/login_page_mobile.dart';
 import 'features/auth/register_tenant_page.dart';
+import 'features/auth/register_tenant_page_mobile.dart';
 import 'features/dashboard/dashboard_page.dart';
 import 'features/dashboard/dashboard_page_mobile.dart';
 import 'features/menu/menu_management_page.dart';
@@ -26,6 +30,7 @@ import 'features/scan/customer_menu_page.dart';
 import 'features/users/users_page.dart';
 import 'features/kitchen/kitchen_display_page.dart';
 import 'features/analytics/analytics_page.dart';
+import 'features/analytics/analytics_page_mobile.dart';
 import 'features/fixed_menu/fixed_menu_management_page.dart';
 import 'features/consumer_auth/consumer_login_page.dart';
 import 'features/consumer_auth/consumer_register_page.dart';
@@ -34,13 +39,16 @@ import 'features/marketplace/marketplace_page.dart';
 import 'features/marketplace/restaurant_detail_page.dart';
 import 'features/consumer_orders/consumer_orders_page.dart';
 import 'features/consumer_orders/consumer_order_detail_page.dart';
+import 'features/consumer_favorites/favorites_page.dart';
 import 'features/consumer_profile/consumer_profile_page.dart';
 import 'features/consumer_profile/addresses_page.dart';
+import 'features/consumer_profile/location_prompt_page.dart';
 import 'features/checkout/checkout_page.dart';
 import 'features/checkout/order_confirmation_page.dart';
+import 'features/promo_codes/promo_codes_page.dart';
 
 /// Staff routes that require authentication
-const _staffRoutes = {'/', '/orders', '/menu', '/tables', '/settings', '/users', '/analytics', '/fixed-menus', '/kitchen'};
+const _staffRoutes = {'/', '/orders', '/menu', '/tables', '/settings', '/users', '/analytics', '/fixed-menus', '/kitchen', '/promo-codes'};
 
 /// Routes that are always public (no auth required) or consumer routes
 bool _isPublicRoute(String location) {
@@ -60,12 +68,18 @@ class _GoRouterRefreshStream extends ChangeNotifier {
   }
 }
 
+/// Root navigator key — exposed so non-route code (FCM handlers, deep links)
+/// can show modals/sheets that need a Navigator above them in the tree.
+final GlobalKey<NavigatorState> appRootNavigatorKey =
+    GlobalKey<NavigatorState>();
+
 final routerProvider = Provider<GoRouter>((ref) {
   final authStream = ref.read(supabaseClientProvider).auth.onAuthStateChange;
 
   return GoRouter(
     initialLocation: '/consumer/login',
     debugLogDiagnostics: true,
+    navigatorKey: appRootNavigatorKey,
     refreshListenable: _GoRouterRefreshStream(authStream),
     redirect: (context, state) {
       final location = state.matchedLocation;
@@ -77,8 +91,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Public routes: scan, customer-menu, consumer auth, marketplace
       if (_isPublicRoute(location)) {
         // Authenticated consumer on consumer login/register → marketplace
+        // (or returnTo if a QR-flow page sent them here to log in).
         if (isAuthenticated && isConsumer &&
             (location == '/consumer/login' || location == '/consumer/register')) {
+          final returnTo = state.uri.queryParameters['returnTo'];
+          if (returnTo != null && returnTo.isNotEmpty) {
+            return returnTo;
+          }
           return '/marketplace';
         }
         // Authenticated staff on consumer login → staff dashboard
@@ -119,7 +138,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/register',
-        builder: (context, state) => const RegisterTenantPage(),
+        builder: (context, state) => _AdaptivePage(
+          desktop: const RegisterTenantPage(),
+          mobile: const RegisterTenantPageMobile(),
+        ),
       ),
 
       // ====================================================================
@@ -132,6 +154,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/consumer/register',
         builder: (context, state) => const ConsumerRegisterPage(),
+      ),
+      GoRoute(
+        path: '/consumer/location',
+        builder: (context, state) => const LocationPromptPage(),
       ),
 
       // ====================================================================
@@ -173,6 +199,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               final restaurantId = state.pathParameters['restaurantId'] ?? '';
               return RestaurantDetailPage(restaurantId: restaurantId);
             },
+          ),
+          GoRoute(
+            path: '/consumer/favorites',
+            builder: (context, state) => const FavoritesPage(),
           ),
           GoRoute(
             path: '/consumer/orders',
@@ -263,11 +293,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/analytics',
-            builder: (context, state) => const AnalyticsPage(),
+            builder: (context, state) => _AdaptivePage(
+              desktop: const AnalyticsPage(),
+              mobile: const AnalyticsPageMobile(),
+            ),
           ),
           GoRoute(
             path: '/fixed-menus',
             builder: (context, state) => const FixedMenuManagementPage(),
+          ),
+          GoRoute(
+            path: '/promo-codes',
+            builder: (context, state) => const PromoCodesPage(),
           ),
         ],
       ),
@@ -298,13 +335,21 @@ class SubitoGustoApp extends ConsumerWidget {
         themeMode = ThemeMode.light;
     }
 
+    final locale = ref.watch(localeProvider);
+
     return MaterialApp.router(
       title: 'SubitoGusto',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: scaffoldMessengerKey,
       theme: tenantTheme.lightTheme,
       darkTheme: tenantTheme.darkTheme,
       themeMode: themeMode,
+      // i18n
+      locale: locale,
+      supportedLocales: kSupportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       routerConfig: router,
+      builder: (context, child) => PushHandler(child: child ?? const SizedBox()),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'delivery_cart_provider.dart';
 
 /// Bottom sheet showing the delivery cart
@@ -12,6 +13,7 @@ class DeliveryCartSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cart = ref.watch(deliveryCartProvider);
+    final l = AppLocalizations.of(context);
 
     return Container(
       constraints: BoxConstraints(
@@ -48,7 +50,7 @@ class DeliveryCartSheet extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Il tuo ordine',
+                        l.cartTitle,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
@@ -175,12 +177,12 @@ class DeliveryCartSheet extends ConsumerWidget {
                       onPressed: cart.meetsMinOrder
                           ? () {
                               Navigator.of(context).pop();
-                              context.go('/checkout');
+                              context.push('/checkout');
                             }
                           : null,
                       icon: const Icon(Icons.payment),
                       label: Text(
-                        'Vai al pagamento - ${cart.formatTotal()}',
+                        l.cartGoToCheckout(cart.formatTotal()),
                       ),
                       style: FilledButton.styleFrom(
                         padding:

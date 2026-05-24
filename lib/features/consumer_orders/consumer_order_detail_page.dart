@@ -4,9 +4,16 @@ import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/error_messages.dart';
+import '../../core/utils/order_status_label.dart';
+import '../../core/widgets/rating_stars.dart';
 import '../../data/models/delivery_order.dart';
 import '../../data/models/delivery_order_item.dart';
+import '../../data/providers/consumer_providers.dart';
+import '../../data/providers/reviews_provider.dart';
 import '../../data/providers/supabase_provider.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../reviews/review_prompt_dialog.dart';
 
 /// Provider to fetch a single delivery order by ID (realtime)
 final deliveryOrderDetailProvider =
@@ -45,10 +52,11 @@ class ConsumerOrderDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final orderAsync = ref.watch(deliveryOrderDetailProvider(orderId));
     final itemsAsync = ref.watch(deliveryOrderItemsProvider(orderId));
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dettaglio ordine'),
+        title: Text(l.ordersDetailTitle),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -63,7 +71,7 @@ class ConsumerOrderDetailPage extends ConsumerWidget {
       body: orderAsync.when(
         data: (order) {
           if (order == null) {
-            return const Center(child: Text('Ordine non trovato'));
+            return Center(child: Text(l.ordersNotFound));
           }
           return SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.md),
@@ -83,7 +91,7 @@ class ConsumerOrderDetailPage extends ConsumerWidget {
                             Row(
                               children: [
                                 Text(
-                                  'Ordine #${order.orderNumber}',
+                                  l.ordersNumber(order.orderNumber),
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
@@ -114,12 +122,12 @@ class ConsumerOrderDetailPage extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.lg),
 
                     // Status timeline
-                    _SectionTitle(title: 'Stato ordine'),
+                    _SectionTitle(title: l.ordersStatusSection),
                     _StatusTimeline(order: order),
                     const SizedBox(height: AppSpacing.lg),
 
                     // Order items
-                    _SectionTitle(title: 'Articoli'),
+                    _SectionTitle(title: l.ordersItemsSection),
                     itemsAsync.when(
                       data: (items) => Card(
                         child: Column(
@@ -166,44 +174,44 @@ class ConsumerOrderDetailPage extends ConsumerWidget {
                           child: CircularProgressIndicator(),
                         ),
                       ),
-                      error: (_, __) => const Card(
+                      error: (_, __) => Card(
                         child: Padding(
-                          padding: EdgeInsets.all(AppSpacing.md),
-                          child: Text('Impossibile caricare gli articoli'),
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Text(l.ordersItemsLoadError),
                         ),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
 
                     // Price breakdown
-                    _SectionTitle(title: 'Riepilogo'),
+                    _SectionTitle(title: l.ordersSummarySection),
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(AppSpacing.md),
                         child: Column(
                           children: [
                             _PriceRow(
-                              label: 'Subtotale',
+                              label: l.checkoutSubtotal,
                               value:
                                   '€ ${order.subtotal.toStringAsFixed(2)}',
                             ),
                             const SizedBox(height: AppSpacing.xs),
                             _PriceRow(
-                              label: 'Consegna',
+                              label: l.checkoutDelivery,
                               value:
                                   '€ ${order.deliveryFee.toStringAsFixed(2)}',
                             ),
                             if (order.discount > 0) ...[
                               const SizedBox(height: AppSpacing.xs),
                               _PriceRow(
-                                label: 'Sconto',
+                                label: l.checkoutDiscount,
                                 value:
                                     '-€ ${order.discount.toStringAsFixed(2)}',
                               ),
                             ],
                             const Divider(height: AppSpacing.lg),
                             _PriceRow(
-                              label: 'Totale',
+                              label: l.checkoutTotal,
                               value: order.formatTotal(),
                               isBold: true,
                             ),
@@ -214,7 +222,7 @@ class ConsumerOrderDetailPage extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.lg),
 
                     // Delivery address
-                    _SectionTitle(title: 'Indirizzo di consegna'),
+                    _SectionTitle(title: l.ordersAddressSection),
                     Card(
                       child: ListTile(
                         leading: const Icon(Icons.location_on),
@@ -227,13 +235,18 @@ class ConsumerOrderDetailPage extends ConsumerWidget {
 
                     if (order.notes != null) ...[
                       const SizedBox(height: AppSpacing.lg),
-                      _SectionTitle(title: 'Note'),
+                      _SectionTitle(title: l.ordersNotesSection),
                       Card(
                         child: Padding(
                           padding: const EdgeInsets.all(AppSpacing.md),
                           child: Text(order.notes!),
                         ),
                       ),
+                    ],
+                    // Review CTA / display — only meaningful for delivered orders.
+                    if (order.status == 'delivered') ...[
+                      const SizedBox(height: AppSpacing.lg),
+                      _ReviewSection(tenantId: order.tenantId),
                     ],
                     const SizedBox(height: AppSpacing.xl),
                   ],
@@ -243,7 +256,7 @@ class ConsumerOrderDetailPage extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Errore: $e')),
+        error: (e, _) => Center(child: Text(humanizeError(e, context))),
       ),
     );
   }
@@ -275,23 +288,24 @@ class _StatusTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final steps = [
       _TimelineStep(
-        label: 'Ordine ricevuto',
+        label: l.statusPending,
         icon: Icons.receipt_long,
         isCompleted: true,
         isActive: order.isPending,
         timestamp: order.createdAt,
       ),
       _TimelineStep(
-        label: 'Confermato',
+        label: l.statusConfirmed,
         icon: Icons.check_circle,
         isCompleted: !order.isPending,
         isActive: order.isConfirmed,
         timestamp: order.confirmedAt,
       ),
       _TimelineStep(
-        label: 'In preparazione',
+        label: l.statusPreparing,
         icon: Icons.restaurant,
         isCompleted: order.isPreparing ||
             order.isReadyForDelivery ||
@@ -300,13 +314,13 @@ class _StatusTimeline extends StatelessWidget {
         isActive: order.isPreparing,
       ),
       _TimelineStep(
-        label: 'In consegna',
+        label: l.statusOutForDelivery,
         icon: Icons.delivery_dining,
         isCompleted: order.isOutForDelivery || order.isDelivered,
         isActive: order.isOutForDelivery || order.isReadyForDelivery,
       ),
       _TimelineStep(
-        label: 'Consegnato',
+        label: l.statusDelivered,
         icon: Icons.home,
         isCompleted: order.isDelivered,
         isActive: order.isDelivered,
@@ -360,7 +374,7 @@ class _StatusTimeline extends StatelessWidget {
     final color = step.isCompleted
         ? AppColors.success
         : step.isActive
-            ? AppColors.burgundy
+            ? Theme.of(context).colorScheme.primary
             : AppColors.textSecondary.withValues(alpha: 0.4);
 
     return Row(
@@ -463,6 +477,108 @@ class _PriceRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Shown on delivered-order detail. If the customer hasn't reviewed yet,
+/// renders a "Lascia recensione" button. If they have, displays their
+/// existing rating with an edit affordance.
+class _ReviewSection extends ConsumerWidget {
+  final String tenantId;
+
+  const _ReviewSection({required this.tenantId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final myReviewAsync = ref.watch(
+        myReviewForTargetProvider(ReviewTargetKey('restaurant', tenantId)));
+    final tenantAsync = ref.watch(restaurantDetailProvider(tenantId));
+    final l = AppLocalizations.of(context);
+
+    return myReviewAsync.when(
+      data: (review) {
+        final tenant = tenantAsync.valueOrNull;
+        final tenantName = tenant?.name ?? '';
+
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: review == null
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l.reviewLeaveTitle,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        l.reviewLeaveSubtitle,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      OutlinedButton.icon(
+                        onPressed: tenantName.isEmpty
+                            ? null
+                            : () => ReviewPromptDialog.show(
+                                  context,
+                                  tenantId: tenantId,
+                                  tenantName: tenantName,
+                                ),
+                        icon: const Icon(Icons.star_outline),
+                        label: Text(l.reviewLeaveButton),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l.reviewMine,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            RatingStarsRow(
+                              rating: review.rating,
+                              size: 20,
+                            ),
+                            if (review.comment != null) ...[
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                review.comment!,
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: tenantName.isEmpty
+                            ? null
+                            : () => ReviewPromptDialog.show(
+                                  context,
+                                  tenantId: tenantId,
+                                  tenantName: tenantName,
+                                ),
+                        child: Text(l.reviewEdit),
+                      ),
+                    ],
+                  ),
+          ),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 }

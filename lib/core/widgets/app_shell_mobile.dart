@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
+import 'language_switcher.dart';
 import 'notifications_panel.dart';
 import '../../data/providers/providers.dart';
 import '../../features/orders/manual_order_dialog.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Mobile shell with AppBar, Drawer and BottomNavigation
 class AppShellMobile extends ConsumerWidget {
@@ -20,22 +22,29 @@ class AppShellMobile extends ConsumerWidget {
     this.showBottomNav = true,
   });
 
-  String get _title {
+  String? _pageTitle(BuildContext context) {
+    final l = AppLocalizations.of(context);
     switch (currentPath) {
       case '/':
-        return 'Dashboard';
+        return l.staffNavDashboard;
       case '/orders':
-        return 'Ordini';
+        return l.staffNavOrders;
       case '/menu':
-        return 'Menu';
+        return l.staffNavMenu;
       case '/tables':
-        return 'Tavoli';
+        return l.staffNavTables;
       case '/users':
-        return 'Utenti';
+        return l.staffNavUsers;
       case '/settings':
-        return 'Impostazioni';
+        return l.staffNavSettings;
+      case '/analytics':
+        return l.staffNavAnalytics;
+      case '/fixed-menus':
+        return l.staffNavFixedMenu;
+      case '/promo-codes':
+        return l.settingsPromoCodes;
       default:
-        return 'SubitoGusto';
+        return null;
     }
   }
 
@@ -47,34 +56,37 @@ class AppShellMobile extends ConsumerWidget {
     final canManageMenu = currentUser?.canManageMenu ?? true;
     final canManageTables = currentUser?.canManageTables ?? true;
     final canManageOrders = currentUser?.canManageOrders ?? true;
+    final colors = ref.watch(tenantColorsProvider);
+    final l = AppLocalizations.of(context);
+    final pageTitle = _pageTitle(context);
 
     // Build bottom nav items based on permissions
     final navItems = <BottomNavigationBarItem>[
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.dashboard_outlined),
-        activeIcon: Icon(Icons.dashboard),
-        label: 'Dashboard',
+      BottomNavigationBarItem(
+        icon: const Icon(Icons.dashboard_outlined),
+        activeIcon: const Icon(Icons.dashboard),
+        label: l.staffNavDashboard,
       ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.receipt_long_outlined),
-        activeIcon: Icon(Icons.receipt_long),
-        label: 'Ordini',
+      BottomNavigationBarItem(
+        icon: const Icon(Icons.receipt_long_outlined),
+        activeIcon: const Icon(Icons.receipt_long),
+        label: l.staffNavOrders,
       ),
     ];
 
     if (canManageMenu) {
-      navItems.add(const BottomNavigationBarItem(
-        icon: Icon(Icons.restaurant_menu_outlined),
-        activeIcon: Icon(Icons.restaurant_menu),
-        label: 'Menu',
+      navItems.add(BottomNavigationBarItem(
+        icon: const Icon(Icons.restaurant_menu_outlined),
+        activeIcon: const Icon(Icons.restaurant_menu),
+        label: l.staffNavMenu,
       ));
     }
 
     if (canManageTables) {
-      navItems.add(const BottomNavigationBarItem(
-        icon: Icon(Icons.table_restaurant_outlined),
-        activeIcon: Icon(Icons.table_restaurant),
-        label: 'Tavoli',
+      navItems.add(BottomNavigationBarItem(
+        icon: const Icon(Icons.table_restaurant_outlined),
+        activeIcon: const Icon(Icons.table_restaurant),
+        label: l.staffNavTables,
       ));
     }
 
@@ -90,13 +102,42 @@ class AppShellMobile extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_title),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: colors.primary,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.restaurant,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(l.appName),
+          ],
+        ),
         actions: const [
+          LanguageSwitcher(),
           NotificationBell(),
         ],
       ),
       drawer: _MobileDrawer(currentPath: currentPath),
-      body: child,
+      body: pageTitle == null
+          ? child
+          : Column(
+              children: [
+                _MobilePageHeader(title: pageTitle),
+                Expanded(child: child),
+              ],
+            ),
       bottomNavigationBar: showBottomNav
           ? BottomNavigationBar(
               currentIndex: getCurrentIndex(),
@@ -118,7 +159,8 @@ class AppShellMobile extends ConsumerWidget {
               items: navItems,
             )
           : null,
-      floatingActionButton: canManageOrders
+      floatingActionButton: canManageOrders &&
+              (currentPath == '/' || currentPath.startsWith('/orders'))
           ? FloatingActionButton(
               onPressed: () {
                 showDialog(
@@ -129,6 +171,36 @@ class AppShellMobile extends ConsumerWidget {
               child: const Icon(Icons.add),
             )
           : null,
+    );
+  }
+}
+
+/// Page title header injected into the mobile shell body so every staff page
+/// shows its title in a consistent spot, while the AppBar stays branded with
+/// the tenant logo and the app name.
+class _MobilePageHeader extends StatelessWidget {
+  final String title;
+
+  const _MobilePageHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+      ),
     );
   }
 }
@@ -148,6 +220,7 @@ class _MobileDrawer extends ConsumerWidget {
     final canManageMenu = currentUser?.canManageMenu ?? true;
     final canManageTables = currentUser?.canManageTables ?? true;
     final isAdmin = currentUser?.isAdmin ?? true;
+    final l = AppLocalizations.of(context);
 
     return Drawer(
       child: Column(
@@ -228,13 +301,13 @@ class _MobileDrawer extends ConsumerWidget {
               children: [
                 _DrawerItem(
                   icon: Icons.dashboard_outlined,
-                  label: 'Dashboard',
+                  label: l.staffNavDashboard,
                   path: '/',
                   currentPath: currentPath,
                 ),
                 _DrawerItem(
                   icon: Icons.receipt_long_outlined,
-                  label: 'Ordini',
+                  label: l.staffNavOrders,
                   path: '/orders',
                   currentPath: currentPath,
                 ),
@@ -243,13 +316,13 @@ class _MobileDrawer extends ConsumerWidget {
                 if (canManageMenu) ...[
                   _DrawerItem(
                     icon: Icons.restaurant_menu_outlined,
-                    label: 'Menu',
+                    label: l.staffNavMenu,
                     path: '/menu',
                     currentPath: currentPath,
                   ),
                   _DrawerItem(
                     icon: Icons.menu_book_outlined,
-                    label: 'Menu Fissi',
+                    label: l.staffNavFixedMenu,
                     path: '/fixed-menus',
                     currentPath: currentPath,
                   ),
@@ -257,7 +330,7 @@ class _MobileDrawer extends ConsumerWidget {
                 if (canManageTables)
                   _DrawerItem(
                     icon: Icons.table_restaurant_outlined,
-                    label: 'Tavoli',
+                    label: l.staffNavTables,
                     path: '/tables',
                     currentPath: currentPath,
                   ),
@@ -265,7 +338,7 @@ class _MobileDrawer extends ConsumerWidget {
                   const Divider(),
                   _DrawerItem(
                     icon: Icons.analytics_outlined,
-                    label: 'Statistiche',
+                    label: l.staffNavAnalytics,
                     path: '/analytics',
                     currentPath: currentPath,
                   ),
@@ -274,13 +347,13 @@ class _MobileDrawer extends ConsumerWidget {
                   const Divider(),
                   _DrawerItem(
                     icon: Icons.people_outlined,
-                    label: 'Utenti',
+                    label: l.staffNavUsers,
                     path: '/users',
                     currentPath: currentPath,
                   ),
                   _DrawerItem(
                     icon: Icons.settings_outlined,
-                    label: 'Impostazioni',
+                    label: l.staffNavSettings,
                     path: '/settings',
                     currentPath: currentPath,
                   ),

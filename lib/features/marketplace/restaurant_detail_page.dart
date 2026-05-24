@@ -1,10 +1,18 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/distance.dart';
+import '../../core/utils/error_messages.dart';
+import '../../core/widgets/rating_stars.dart';
+import '../../core/widgets/skeletons.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../data/models/menu_item.dart';
 import '../../data/providers/consumer_providers.dart';
+import '../../data/providers/favorites_provider.dart';
+import '../../data/providers/reviews_provider.dart';
 import 'delivery_cart_provider.dart';
 import 'delivery_cart_sheet.dart';
 
@@ -29,13 +37,33 @@ class _RestaurantDetailPageState extends ConsumerState<RestaurantDetailPage> {
     final menuItemsAsync = ref.watch(restaurantMenuItemsProvider(widget.restaurantId));
     final cartItemCount = ref.watch(deliveryCartItemCountProvider);
     final cartTotal = ref.watch(deliveryCartTotalProvider);
+    final favoriteRestaurantIds =
+        ref.watch(favoriteRestaurantIdsProvider).valueOrNull ??
+            const <String>{};
+    final isRestaurantLiked =
+        favoriteRestaurantIds.contains(widget.restaurantId);
+    final defaultAddress = ref.watch(defaultDeliveryAddressProvider);
 
     return Scaffold(
       body: restaurantAsync.when(
         data: (restaurant) {
           if (restaurant == null) {
-            return const Center(child: Text('Ristorante non trovato'));
+            return Center(child: Text(AppLocalizations.of(context).restaurantNotFound));
           }
+
+          final double? distanceKm = (defaultAddress?.latitude != null &&
+                  defaultAddress?.longitude != null &&
+                  restaurant.hasCoordinates)
+              ? haversineKm(
+                  defaultAddress!.latitude!,
+                  defaultAddress.longitude!,
+                  restaurant.latitude!,
+                  restaurant.longitude!,
+                )
+              : null;
+
+          final canAcceptOrders =
+              restaurant.hasStripeAccount && !restaurant.vacationMode;
 
           return CustomScrollView(
             slivers: [
@@ -54,40 +82,42 @@ class _RestaurantDetailPageState extends ConsumerState<RestaurantDetailPage> {
                   ),
                   onPressed: () => context.go('/marketplace'),
                 ),
+                actions: [
+                  IconButton(
+                    icon: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isRestaurantLiked
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: isRestaurantLiked ? Colors.red : Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    onPressed: () => ref
+                        .read(favoritesControllerProvider)
+                        .toggleRestaurant(widget.restaurantId),
+                  ),
+                ],
                 flexibleSpace: FlexibleSpaceBar(
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
                       // Cover image
                       restaurant.coverImageUrl != null
-                          ? Image.network(
-                              restaurant.coverImageUrl!,
+                          ? CachedNetworkImage(
+                              imageUrl: restaurant.coverImageUrl!,
                               fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Theme.of(context).colorScheme.primary,
-                                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                              memCacheHeight: 800,
+                              maxHeightDiskCache: 800,
+                              placeholder: (_, __) => _coverFallback(context),
+                              errorWidget: (_, __, ___) => _coverFallback(context),
                             )
-                          : Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Theme.of(context).colorScheme.primary,
-                                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
-                                  ],
-                                ),
-                              ),
-                            ),
+                          : _coverFallback(context),
                       // Gradient overlay
                       Container(
                         decoration: BoxDecoration(
@@ -129,24 +159,40 @@ class _RestaurantDetailPageState extends ConsumerState<RestaurantDetailPage> {
                               ),
                             const SizedBox(height: AppSpacing.sm),
                             // Delivery info chips
-                            Wrap(
-                              spacing: AppSpacing.sm,
-                              children: [
-                                _InfoChip(
-                                  icon: Icons.access_time,
-                                  label: restaurant.estimatedTimeDisplay,
-                                ),
-                                _InfoChip(
-                                  icon: Icons.delivery_dining,
-                                  label: restaurant.formatDeliveryFee(),
-                                ),
-                                if (restaurant.deliveryMinOrder > 0)
+                            Consumer(builder: (context, ref, _) {
+                              final aggAsync = ref.watch(reviewAggregateProvider(
+                                  ReviewTargetKey(
+                                      'restaurant', widget.restaurantId)));
+                              final agg = aggAsync.valueOrNull;
+                              final hasReviews =
+                                  agg != null && agg.reviewCount > 0;
+                              return Wrap(
+                                spacing: AppSpacing.sm,
+                                children: [
+                                  if (hasReviews)
+                                    _InfoChip(
+                                      icon: Icons.star,
+                                      label:
+                                          '${agg.avgRating.toStringAsFixed(1)} (${agg.reviewCount})',
+                                    ),
                                   _InfoChip(
-                                    icon: Icons.shopping_bag_outlined,
-                                    label: 'Min. ${restaurant.formatMinOrder()}',
+                                    icon: Icons.access_time,
+                                    label:
+                                        restaurant.formatEstimatedTotal(distanceKm),
                                   ),
-                              ],
-                            ),
+                                  _InfoChip(
+                                    icon: Icons.delivery_dining,
+                                    label: restaurant.formatDeliveryFee(),
+                                  ),
+                                  if (restaurant.deliveryMinOrder > 0)
+                                    _InfoChip(
+                                      icon: Icons.shopping_bag_outlined,
+                                      label:
+                                          'Min. ${restaurant.formatMinOrder()}',
+                                    ),
+                                ],
+                              );
+                            }),
                           ],
                         ),
                       ),
@@ -199,6 +245,51 @@ class _RestaurantDetailPageState extends ConsumerState<RestaurantDetailPage> {
                 ),
               ),
 
+              // Banner when restaurant can't take orders
+              if (!canAcceptOrders)
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      0,
+                    ),
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      border: Border.all(
+                        color: AppColors.warning.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          restaurant.vacationMode
+                              ? Icons.beach_access
+                              : Icons.info_outline,
+                          color: AppColors.warning,
+                          size: 20,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            restaurant.vacationMode
+                                ? 'Questo ristorante è temporaneamente in vacanza e non accetta ordini'
+                                : 'Questo ristorante non accetta ancora ordini online',
+                            style: const TextStyle(
+                              color: AppColors.warning,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
               // Menu items
               menuItemsAsync.when(
                 data: (allItems) {
@@ -224,17 +315,18 @@ class _RestaurantDetailPageState extends ConsumerState<RestaurantDetailPage> {
                         (context, index) => _DeliveryMenuItemCard(
                           item: items[index],
                           restaurantId: widget.restaurantId,
+                          canAcceptOrders: canAcceptOrders,
                         ),
                         childCount: items.length,
                       ),
                     ),
                   );
                 },
-                loading: () => const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
+                loading: () => const SliverToBoxAdapter(
+                  child: MenuItemListSkeleton(),
                 ),
                 error: (e, _) => SliverFillRemaining(
-                  child: Center(child: Text('Errore: $e')),
+                  child: Center(child: Text(humanizeError(e, context))),
                 ),
               ),
 
@@ -243,11 +335,13 @@ class _RestaurantDetailPageState extends ConsumerState<RestaurantDetailPage> {
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Errore: $e')),
+        loading: () => const _RestaurantDetailSkeleton(),
+        error: (e, _) => Center(child: Text(humanizeError(e, context))),
       ),
-      // Cart FAB
-      floatingActionButton: cartItemCount > 0
+      // Cart FAB (hidden when restaurant can't take orders)
+      floatingActionButton: cartItemCount > 0 &&
+              (restaurantAsync.valueOrNull?.hasStripeAccount ?? false) &&
+              !(restaurantAsync.valueOrNull?.vacationMode ?? false)
           ? FloatingActionButton.extended(
               onPressed: () {
                 showModalBottomSheet(
@@ -268,6 +362,38 @@ class _RestaurantDetailPageState extends ConsumerState<RestaurantDetailPage> {
               ),
             )
           : null,
+    );
+  }
+}
+
+Widget _coverFallback(BuildContext context) {
+  return Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Theme.of(context).colorScheme.primary,
+          Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Full-page skeleton shown while restaurant detail loads.
+class _RestaurantDetailSkeleton extends StatelessWidget {
+  const _RestaurantDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      slivers: const [
+        SliverToBoxAdapter(
+          child: SizedBox(height: 220),
+        ),
+        SliverToBoxAdapter(child: MenuItemListSkeleton()),
+      ],
     );
   }
 }
@@ -309,16 +435,27 @@ class _InfoChip extends StatelessWidget {
 class _DeliveryMenuItemCard extends ConsumerWidget {
   final MenuItem item;
   final String restaurantId;
+  final bool canAcceptOrders;
 
   const _DeliveryMenuItemCard({
     required this.item,
     required this.restaurantId,
+    required this.canAcceptOrders,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final restaurantAsync = ref.watch(restaurantDetailProvider(restaurantId));
     final restaurant = restaurantAsync.valueOrNull;
+    final favoriteItemIds =
+        ref.watch(favoriteMenuItemIdsProvider).valueOrNull ??
+            const <String>{};
+    final isLiked = favoriteItemIds.contains(item.id);
+    final itemAggregates = ref
+            .watch(itemAggregatesForRestaurantProvider(restaurantId))
+            .valueOrNull ??
+        const {};
+    final itemAgg = itemAggregates[item.id];
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -336,12 +473,18 @@ class _DeliveryMenuItemCard extends ConsumerWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppRadius.sm),
                 child: item.imageUrl != null
-                    ? Image.network(
-                        item.imageUrl!,
+                    ? CachedNetworkImage(
+                        imageUrl: item.imageUrl!,
                         width: 80,
                         height: 80,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildImagePlaceholder(context),
+                        memCacheWidth: 288,
+                        memCacheHeight: 288,
+                        maxWidthDiskCache: 288,
+                        maxHeightDiskCache: 288,
+                        placeholder: (_, __) => _buildImagePlaceholder(context),
+                        errorWidget: (_, __, ___) =>
+                            _buildImagePlaceholder(context),
                       )
                     : _buildImagePlaceholder(context),
               ),
@@ -351,11 +494,36 @@ class _DeliveryMenuItemCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.name,
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
+                        ),
+                        InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: () => ref
+                              .read(favoritesControllerProvider)
+                              .toggleMenuItem(
+                                menuItemId: item.id,
+                                tenantId: restaurantId,
+                              ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(4),
+                            child: Icon(
+                              isLiked ? Icons.favorite : Icons.favorite_border,
+                              size: 22,
+                              color: isLiked
+                                  ? Colors.red
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     if (item.description != null) ...[
                       const SizedBox(height: AppSpacing.xs),
@@ -366,6 +534,14 @@ class _DeliveryMenuItemCard extends ConsumerWidget {
                             ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                    if (itemAgg != null && itemAgg.reviewCount > 0) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      RatingStars(
+                        rating: itemAgg.avgRating,
+                        count: itemAgg.reviewCount,
+                        size: 14,
                       ),
                     ],
                     const SizedBox(height: AppSpacing.sm),
@@ -405,26 +581,33 @@ class _DeliveryMenuItemCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   IconButton.filled(
-                    onPressed: () {
-                      // Ensure cart is set to this restaurant
-                      if (restaurant != null) {
-                        ref.read(deliveryCartProvider.notifier).setRestaurant(
-                              id: restaurantId,
-                              name: restaurant.name,
-                              deliveryFee: restaurant.deliveryFee,
-                              deliveryMinOrder: restaurant.deliveryMinOrder,
+                    onPressed: !canAcceptOrders
+                        ? null
+                        : () {
+                            // Ensure cart is set to this restaurant
+                            if (restaurant != null) {
+                              ref
+                                  .read(deliveryCartProvider.notifier)
+                                  .setRestaurant(
+                                    id: restaurantId,
+                                    name: restaurant.name,
+                                    deliveryFee: restaurant.deliveryFee,
+                                    deliveryMinOrder:
+                                        restaurant.deliveryMinOrder,
+                                  );
+                            }
+                            ref
+                                .read(deliveryCartProvider.notifier)
+                                .addItem(item);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(AppLocalizations.of(context).menuItemAdded(item.name)),
+                                backgroundColor: AppColors.success,
+                                duration: const Duration(seconds: 1),
+                                behavior: SnackBarBehavior.floating,
+                              ),
                             );
-                      }
-                      ref.read(deliveryCartProvider.notifier).addItem(item);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('${item.name} aggiunto'),
-                          backgroundColor: AppColors.success,
-                          duration: const Duration(seconds: 1),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
+                          },
                     icon: const Icon(Icons.add),
                     style: IconButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,

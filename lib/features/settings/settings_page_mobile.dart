@@ -3,9 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/error_messages.dart';
 import '../../data/providers/settings_provider.dart';
 import '../../data/providers/providers.dart';
 import '../../data/providers/tenant_theme_provider.dart';
+import '../../data/services/geocoding_service.dart';
+import '../../core/widgets/language_switcher.dart';
+import '../../l10n/generated/app_localizations.dart';
+import 'discovery_settings_section.dart';
+import 'edit_address_dialog.dart';
 
 /// Settings page for mobile
 class SettingsPageMobile extends ConsumerWidget {
@@ -13,6 +19,7 @@ class SettingsPageMobile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final settings = ref.watch(settingsProvider);
     final tenantAsync = ref.watch(tenantProvider);
     final colors = ref.watch(tenantColorsProvider);
@@ -22,7 +29,7 @@ class SettingsPageMobile extends ConsumerWidget {
       body: ListView(
         children: [
           // Tenant Info Section
-          _SectionHeader(title: 'Ristorante'),
+          _SectionHeader(title: l.settingsRestaurant),
           tenantAsync.when(
             data: (tenant) => Card(
               margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -30,8 +37,8 @@ class SettingsPageMobile extends ConsumerWidget {
                 children: [
                   ListTile(
                     leading: Container(
-                      width: 48,
-                      height: 48,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
                         color: primaryColor,
                         borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -46,7 +53,7 @@ class SettingsPageMobile extends ConsumerWidget {
                                   tenant.logoInitial,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 24,
+                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -57,25 +64,44 @@ class SettingsPageMobile extends ConsumerWidget {
                                 tenant?.logoInitial ?? 'T',
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 24,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
                     ),
-                    title: Text(tenant?.name ?? 'Ristorante'),
-                    subtitle: Text(tenant?.address ?? 'Indirizzo non configurato'),
+                    title: Text(tenant?.name ?? l.settingsRestaurant),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.location_on_outlined),
+                    title: Text(l.settingsAddress),
+                    subtitle: Text(tenant?.address ?? l.settingsNotConfigured),
+                    trailing: const Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: AppColors.textSecondary,
+                    ),
+                    onTap: tenant == null
+                        ? null
+                        : () => showDialog(
+                              context: context,
+                              builder: (_) => EditAddressDialog(
+                                tenantId: tenant.id,
+                                currentAddress: tenant.address,
+                              ),
+                            ),
                   ),
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.phone),
-                    title: const Text('Telefono'),
-                    subtitle: Text(tenant?.phone ?? 'Non configurato'),
+                    title: Text(l.settingsPhone),
+                    subtitle: Text(tenant?.phone ?? l.settingsNotConfigured),
                   ),
                   ListTile(
                     leading: const Icon(Icons.email),
-                    title: const Text('Email'),
-                    subtitle: Text(tenant?.email ?? 'Non configurato'),
+                    title: Text(l.settingsEmail),
+                    subtitle: Text(tenant?.email ?? l.settingsNotConfigured),
                   ),
                 ],
               ),
@@ -87,25 +113,25 @@ class SettingsPageMobile extends ConsumerWidget {
                 child: Center(child: CircularProgressIndicator()),
               ),
             ),
-            error: (_, __) => const Card(
-              margin: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            error: (_, __) => Card(
+              margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: ListTile(
-                leading: Icon(Icons.error, color: AppColors.error),
-                title: Text('Errore nel caricamento'),
+                leading: const Icon(Icons.error, color: AppColors.error),
+                title: Text(AppLocalizations.of(context).settingsLoadingError),
               ),
             ),
           ),
 
           // Notifications Section
-          _SectionHeader(title: 'Notifiche'),
+          _SectionHeader(title: l.settingsNotifications),
           Card(
             margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             child: Column(
               children: [
                 SwitchListTile(
                   secondary: const Icon(Icons.notifications),
-                  title: const Text('Notifiche ordini'),
-                  subtitle: const Text('Ricevi notifiche per nuovi ordini'),
+                  title: Text(l.settingsNotificationsOrders),
+                  subtitle: Text(l.settingsNotificationsOrdersSub),
                   value: settings.orderNotifications,
                   onChanged: (value) {
                     ref.read(settingsProvider.notifier).setOrderNotifications(value);
@@ -115,8 +141,8 @@ class SettingsPageMobile extends ConsumerWidget {
                 const Divider(height: 1),
                 SwitchListTile(
                   secondary: const Icon(Icons.volume_up),
-                  title: const Text('Suoni di avviso'),
-                  subtitle: const Text('Riproduci un suono per le notifiche'),
+                  title: Text(l.settingsSoundAlertsTitle),
+                  subtitle: Text(l.settingsSoundAlertsSub),
                   value: settings.soundAlerts,
                   onChanged: settings.orderNotifications
                       ? (value) {
@@ -128,8 +154,8 @@ class SettingsPageMobile extends ConsumerWidget {
                 const Divider(height: 1),
                 SwitchListTile(
                   secondary: const Icon(Icons.vibration),
-                  title: const Text('Vibrazione'),
-                  subtitle: const Text('Vibra per le notifiche'),
+                  title: Text(l.settingsVibrationTitle),
+                  subtitle: Text(l.settingsVibrationSubShort),
                   value: settings.vibration,
                   onChanged: settings.orderNotifications
                       ? (value) {
@@ -141,7 +167,7 @@ class SettingsPageMobile extends ConsumerWidget {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.music_note),
-                  title: const Text('Suono notifica'),
+                  title: Text(l.settingsNotificationSound),
                   trailing: DropdownButton<int>(
                     value: settings.notificationSoundIndex,
                     underline: const SizedBox(),
@@ -150,10 +176,10 @@ class SettingsPageMobile extends ConsumerWidget {
                             ref.read(settingsProvider.notifier).setNotificationSoundIndex(v!);
                           }
                         : null,
-                    items: const [
-                      DropdownMenuItem(value: 0, child: Text('Classico')),
-                      DropdownMenuItem(value: 1, child: Text('Campanello')),
-                      DropdownMenuItem(value: 2, child: Text('Chime')),
+                    items: [
+                      DropdownMenuItem(value: 0, child: Text(l.settingsSoundClassic)),
+                      DropdownMenuItem(value: 1, child: Text(l.settingsSoundBell)),
+                      DropdownMenuItem(value: 2, child: Text(l.settingsSoundChime)),
                     ],
                   ),
                 ),
@@ -162,13 +188,13 @@ class SettingsPageMobile extends ConsumerWidget {
           ),
 
           // Orders Section
-          _SectionHeader(title: 'Gestione Ordini'),
+          _SectionHeader(title: l.settingsOrdersManagement),
           Card(
             margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             child: SwitchListTile(
               secondary: const Icon(Icons.check_circle),
-              title: const Text('Conferma automatica'),
-              subtitle: const Text('Conferma automaticamente i nuovi ordini'),
+              title: Text(l.settingsAutoConfirm),
+              subtitle: Text(l.settingsAutoConfirmSub),
               value: settings.autoConfirmOrders,
               onChanged: (value) {
                 ref.read(settingsProvider.notifier).setAutoConfirmOrders(value);
@@ -178,7 +204,7 @@ class SettingsPageMobile extends ConsumerWidget {
           ),
 
           // Delivery Section
-          _SectionHeader(title: 'Consegne'),
+          _SectionHeader(title: l.settingsDelivery),
           tenantAsync.when(
             data: (tenant) => _DeliverySettingsMobile(
               deliveryEnabled: tenant?.deliveryEnabled ?? false,
@@ -188,6 +214,9 @@ class SettingsPageMobile extends ConsumerWidget {
               deliveryEstimatedTimeMin: tenant?.deliveryEstimatedTimeMin ?? 30,
               stripeAccountId: tenant?.stripeAccountId,
               tenantId: tenant?.id,
+              hasCoordinates: tenant?.hasCoordinates ?? false,
+              address: tenant?.address,
+              vacationMode: tenant?.vacationMode ?? false,
             ),
             loading: () => const Card(
               margin: EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -196,24 +225,62 @@ class SettingsPageMobile extends ConsumerWidget {
                 child: Center(child: CircularProgressIndicator()),
               ),
             ),
-            error: (_, __) => const Card(
-              margin: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            error: (_, __) => Card(
+              margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               child: ListTile(
-                leading: Icon(Icons.error, color: AppColors.error),
-                title: Text('Errore nel caricamento'),
+                leading: const Icon(Icons.error, color: AppColors.error),
+                title: Text(AppLocalizations.of(context).settingsLoadingError),
               ),
             ),
           ),
 
+          // Discovery (cuisine + dietary tags)
+          _SectionHeader(title: l.settingsCategoryAndTags),
+          tenantAsync.when(
+            data: (tenant) => tenant == null
+                ? const SizedBox.shrink()
+                : Card(
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md),
+                    child: DiscoverySettingsSection(tenant: tenant),
+                  ),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
+
+          // Promo codes — link to dedicated management page
+          _SectionHeader(title: l.settingsPromoCodes),
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: ListTile(
+              leading: const Icon(Icons.local_offer_outlined),
+              title: Text(l.settingsPromoCodesAction),
+              subtitle: Text(l.settingsPromoCodesSubtitle),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/promo-codes'),
+            ),
+          ),
+
+          // Language
+          _SectionHeader(title: 'Lingua / Language'),
+          Card(
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: const ListTile(
+              leading: Icon(Icons.translate),
+              title: Text('Lingua / Language'),
+              trailing: LanguageSwitcher(),
+            ),
+          ),
+
           // Theme Section
-          _SectionHeader(title: 'Aspetto'),
+          _SectionHeader(title: l.settingsAppearance),
           Card(
             margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             child: Column(
               children: [
                 RadioListTile<String>(
                   secondary: const Icon(Icons.light_mode),
-                  title: const Text('Tema chiaro'),
+                  title: Text(l.settingsThemeLight),
                   value: 'light',
                   groupValue: settings.theme,
                   onChanged: (value) {
@@ -224,7 +291,7 @@ class SettingsPageMobile extends ConsumerWidget {
                 const Divider(height: 1),
                 RadioListTile<String>(
                   secondary: const Icon(Icons.dark_mode),
-                  title: const Text('Tema scuro'),
+                  title: Text(l.settingsThemeDark),
                   value: 'dark',
                   groupValue: settings.theme,
                   onChanged: (value) {
@@ -235,7 +302,7 @@ class SettingsPageMobile extends ConsumerWidget {
                 const Divider(height: 1),
                 RadioListTile<String>(
                   secondary: const Icon(Icons.settings_brightness),
-                  title: const Text('Segui sistema'),
+                  title: Text(l.settingsThemeSystem),
                   value: 'system',
                   groupValue: settings.theme,
                   onChanged: (value) {
@@ -248,14 +315,14 @@ class SettingsPageMobile extends ConsumerWidget {
           ),
 
           // Account Section
-          _SectionHeader(title: 'Account'),
+          _SectionHeader(title: l.settingsAccount),
           Card(
             margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             child: Column(
               children: [
                 ListTile(
                   leading: const Icon(Icons.email),
-                  title: const Text('Email'),
+                  title: Text(l.settingsEmail),
                   subtitle: Text(
                     Supabase.instance.client.auth.currentUser?.email ?? 'N/A',
                   ),
@@ -263,16 +330,16 @@ class SettingsPageMobile extends ConsumerWidget {
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.lock),
-                  title: const Text('Cambia password'),
+                  title: Text(l.settingsChangePassword),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => _showChangePasswordSheet(context),
                 ),
                 const Divider(height: 1),
                 ListTile(
                   leading: const Icon(Icons.logout, color: AppColors.error),
-                  title: const Text(
-                    'Esci',
-                    style: TextStyle(color: AppColors.error),
+                  title: Text(
+                    l.settingsSignOut,
+                    style: const TextStyle(color: AppColors.error),
                   ),
                   onTap: () => _logout(context, ref),
                 ),
@@ -293,7 +360,7 @@ class SettingsPageMobile extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Versione 1.0.0',
+                  l.settingsVersion('1.0.0'),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -323,18 +390,18 @@ class SettingsPageMobile extends ConsumerWidget {
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Conferma Logout'),
-        content: const Text('Sei sicuro di voler uscire?'),
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(AppLocalizations.of(dialogCtx).settingsSignOutTitle),
+        content: Text(AppLocalizations.of(dialogCtx).settingsSignOutConfirm),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annulla'),
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: Text(AppLocalizations.of(dialogCtx).commonCancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogCtx, true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Esci'),
+            child: Text(AppLocalizations.of(dialogCtx).settingsSignOut),
           ),
         ],
       ),
@@ -410,8 +477,8 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Password aggiornata con successo'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).settingsPasswordUpdated),
             backgroundColor: AppColors.success,
           ),
         );
@@ -420,7 +487,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore: $e'),
+            content: Text(humanizeError(e, context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -434,6 +501,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -444,7 +512,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Cambia password',
+                l.settingsChangePassword,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -454,7 +522,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
                 controller: _newPasswordController,
                 obscureText: _obscureNew,
                 decoration: InputDecoration(
-                  labelText: 'Nuova password',
+                  labelText: l.settingsNewPassword,
                   prefixIcon: const Icon(Icons.lock),
                   suffixIcon: IconButton(
                     icon: Icon(_obscureNew ? Icons.visibility : Icons.visibility_off),
@@ -463,7 +531,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
                 ),
                 validator: (value) {
                   if (value == null || value.length < 6) {
-                    return 'Minimo 6 caratteri';
+                    return l.settingsPasswordMinChars;
                   }
                   return null;
                 },
@@ -473,7 +541,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
                 controller: _confirmPasswordController,
                 obscureText: _obscureConfirm,
                 decoration: InputDecoration(
-                  labelText: 'Conferma password',
+                  labelText: l.settingsConfirmPassword,
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
                     icon: Icon(_obscureConfirm ? Icons.visibility : Icons.visibility_off),
@@ -482,7 +550,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
                 ),
                 validator: (value) {
                   if (value != _newPasswordController.text) {
-                    return 'Le password non coincidono';
+                    return l.settingsPasswordMismatch;
                   }
                   return null;
                 },
@@ -502,7 +570,7 @@ class _ChangePasswordSheetState extends State<_ChangePasswordSheet> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Salva'),
+                    : Text(l.commonSave),
               ),
             ],
           ),
@@ -520,6 +588,9 @@ class _DeliverySettingsMobile extends ConsumerStatefulWidget {
   final int deliveryEstimatedTimeMin;
   final String? stripeAccountId;
   final String? tenantId;
+  final bool hasCoordinates;
+  final String? address;
+  final bool vacationMode;
 
   const _DeliverySettingsMobile({
     required this.deliveryEnabled,
@@ -529,6 +600,9 @@ class _DeliverySettingsMobile extends ConsumerStatefulWidget {
     required this.deliveryEstimatedTimeMin,
     this.stripeAccountId,
     this.tenantId,
+    required this.hasCoordinates,
+    this.address,
+    required this.vacationMode,
   });
 
   @override
@@ -539,6 +613,7 @@ class _DeliverySettingsMobile extends ConsumerStatefulWidget {
 class _DeliverySettingsMobileState
     extends ConsumerState<_DeliverySettingsMobile> {
   late bool _enabled;
+  late bool _vacation;
   late TextEditingController _feeController;
   late TextEditingController _radiusController;
   late TextEditingController _minOrderController;
@@ -549,6 +624,7 @@ class _DeliverySettingsMobileState
   void initState() {
     super.initState();
     _enabled = widget.deliveryEnabled;
+    _vacation = widget.vacationMode;
     _feeController =
         TextEditingController(text: widget.deliveryFee.toStringAsFixed(2));
     _radiusController =
@@ -564,6 +640,9 @@ class _DeliverySettingsMobileState
     super.didUpdateWidget(oldWidget);
     if (oldWidget.deliveryEnabled != widget.deliveryEnabled) {
       _enabled = widget.deliveryEnabled;
+    }
+    if (oldWidget.vacationMode != widget.vacationMode) {
+      _vacation = widget.vacationMode;
     }
     if (oldWidget.deliveryFee != widget.deliveryFee) {
       _feeController.text = widget.deliveryFee.toStringAsFixed(2);
@@ -598,6 +677,7 @@ class _DeliverySettingsMobileState
           .from('tenants')
           .update({
             'delivery_enabled': _enabled,
+            'vacation_mode': _vacation,
             'delivery_fee': double.tryParse(_feeController.text) ?? 0,
             'delivery_radius_km':
                 double.tryParse(_radiusController.text) ?? 5,
@@ -614,8 +694,8 @@ class _DeliverySettingsMobileState
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Impostazioni consegna salvate'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).settingsDeliverySaved),
             backgroundColor: AppColors.success,
           ),
         );
@@ -624,7 +704,7 @@ class _DeliverySettingsMobileState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore nel salvataggio: $e'),
+            content: Text(humanizeError(e, context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -636,6 +716,7 @@ class _DeliverySettingsMobileState
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final primaryColor = ref.watch(tenantColorsProvider).primary;
 
     return Card(
@@ -644,14 +725,36 @@ class _DeliverySettingsMobileState
         children: [
           SwitchListTile(
             secondary: const Icon(Icons.delivery_dining),
-            title: const Text('Abilita consegne'),
-            subtitle: const Text('Appari nel marketplace'),
+            title: Text(l.settingsEnableDelivery),
+            subtitle: Text(l.settingsEnableDeliverySubShort),
             value: _enabled,
             onChanged: (value) => setState(() => _enabled = value),
             activeColor: primaryColor,
           ),
           if (_enabled) ...[
             const Divider(height: 1),
+            SwitchListTile(
+              secondary: const Icon(Icons.beach_access_outlined),
+              title: Text(l.settingsVacation),
+              subtitle: Text(l.settingsVacationSubShort),
+              value: _vacation,
+              onChanged: (value) => setState(() => _vacation = value),
+              activeColor: AppColors.warning,
+            ),
+            const Divider(height: 1),
+            if (!widget.hasCoordinates && widget.tenantId != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  0,
+                ),
+                child: _GeocodingWarningMobile(
+                  tenantId: widget.tenantId!,
+                  address: widget.address,
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
@@ -663,11 +766,11 @@ class _DeliverySettingsMobileState
                           controller: _feeController,
                           keyboardType: const TextInputType.numberWithOptions(
                               decimal: true),
-                          decoration: const InputDecoration(
-                            labelText: 'Costo consegna',
+                          decoration: InputDecoration(
+                            labelText: l.settingsDeliveryCost,
                             suffixText: '\u20ac',
                             isDense: true,
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -677,11 +780,11 @@ class _DeliverySettingsMobileState
                           controller: _minOrderController,
                           keyboardType: const TextInputType.numberWithOptions(
                               decimal: true),
-                          decoration: const InputDecoration(
-                            labelText: 'Ordine minimo',
+                          decoration: InputDecoration(
+                            labelText: l.settingsDeliveryMinOrder,
                             suffixText: '\u20ac',
                             isDense: true,
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -695,11 +798,11 @@ class _DeliverySettingsMobileState
                           controller: _radiusController,
                           keyboardType: const TextInputType.numberWithOptions(
                               decimal: true),
-                          decoration: const InputDecoration(
-                            labelText: 'Raggio',
+                          decoration: InputDecoration(
+                            labelText: l.settingsDeliveryRadiusLabel,
                             suffixText: 'km',
                             isDense: true,
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -708,11 +811,11 @@ class _DeliverySettingsMobileState
                         child: TextField(
                           controller: _timeController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Tempo stimato',
+                          decoration: InputDecoration(
+                            labelText: l.settingsDeliveryEtaLabel,
                             suffixText: 'min',
                             isDense: true,
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -731,6 +834,11 @@ class _DeliverySettingsMobileState
                       ? AppColors.success.withValues(alpha: 0.1)
                       : AppColors.warning.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.sm),
+                  border: Border.all(
+                    color: widget.stripeAccountId != null
+                        ? AppColors.success.withValues(alpha: 0.4)
+                        : AppColors.warning.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -747,10 +855,11 @@ class _DeliverySettingsMobileState
                     Expanded(
                       child: Text(
                         widget.stripeAccountId != null
-                            ? 'Stripe Connect configurato'
-                            : 'Stripe non configurato',
+                            ? l.settingsStripeConnected
+                            : l.settingsStripeNotConfigured,
                         style: TextStyle(
                           fontSize: 13,
+                          fontWeight: FontWeight.w600,
                           color: widget.stripeAccountId != null
                               ? AppColors.success
                               : AppColors.warning,
@@ -783,7 +892,168 @@ class _DeliverySettingsMobileState
                         ),
                       )
                     : const Icon(Icons.save),
-                label: const Text('Salva'),
+                label: Text(l.commonSave),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Warning shown when delivery is enabled but the tenant has no lat/lng.
+class _GeocodingWarningMobile extends ConsumerStatefulWidget {
+  final String tenantId;
+  final String? address;
+
+  const _GeocodingWarningMobile({required this.tenantId, this.address});
+
+  @override
+  ConsumerState<_GeocodingWarningMobile> createState() =>
+      _GeocodingWarningMobileState();
+}
+
+class _GeocodingWarningMobileState
+    extends ConsumerState<_GeocodingWarningMobile> {
+  bool _isRetrying = false;
+  String? _resultMessage;
+  bool _resultIsError = false;
+
+  Future<void> _retry() async {
+    final address = widget.address?.trim();
+    if (address == null || address.isEmpty) return;
+
+    setState(() {
+      _isRetrying = true;
+      _resultMessage = null;
+    });
+
+    final geo = await GeocodingService().geocode(address);
+
+    if (!mounted) return;
+
+    final l = AppLocalizations.of(context);
+    if (geo == null) {
+      setState(() {
+        _isRetrying = false;
+        _resultIsError = true;
+        _resultMessage = l.settingsGeoFailShort;
+      });
+      return;
+    }
+
+    try {
+      await Supabase.instance.client.from('tenants').update({
+        'latitude': geo.lat,
+        'longitude': geo.lng,
+      }).eq('id', widget.tenantId);
+
+      ref.invalidate(tenantProvider);
+
+      if (!mounted) return;
+      setState(() {
+        _isRetrying = false;
+        _resultIsError = false;
+        _resultMessage = l.settingsGeoSuccess;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isRetrying = false;
+        _resultIsError = true;
+        _resultMessage = humanizeError(e, context);
+      });
+    }
+  }
+
+  Future<void> _openAddressDialog() async {
+    await showDialog<bool>(
+      context: context,
+      builder: (_) => EditAddressDialog(
+        tenantId: widget.tenantId,
+        currentAddress: widget.address,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final hasAddress =
+        widget.address != null && widget.address!.trim().isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(
+          color: AppColors.warning.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                size: 18,
+                color: AppColors.warning,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  l.settingsNotGeolocatedShort,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.warning,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            hasAddress
+                ? l.settingsGeoMissingHint
+                : l.settingsGeoAddressFirst,
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          if (_resultMessage != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              _resultMessage!,
+              style: TextStyle(
+                fontSize: 12,
+                color: _resultIsError ? AppColors.error : AppColors.success,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.tonalIcon(
+              onPressed: hasAddress
+                  ? (_isRetrying ? null : _retry)
+                  : _openAddressDialog,
+              icon: _isRetrying
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(hasAddress
+                      ? Icons.refresh
+                      : Icons.location_on_outlined),
+              label: Text(
+                hasAddress ? l.settingsRetryGeocoding : l.settingsSetAddress,
               ),
             ),
           ),

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/error_messages.dart';
 import '../../data/models/fixed_menu.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Dialog for creating/editing a fixed menu
 class FixedMenuDialog extends ConsumerStatefulWidget {
@@ -29,15 +31,21 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
 
   bool get isEditing => widget.menu != null;
 
-  final _dayOptions = [
-    ('mon', 'Lun'),
-    ('tue', 'Mar'),
-    ('wed', 'Mer'),
-    ('thu', 'Gio'),
-    ('fri', 'Ven'),
-    ('sat', 'Sab'),
-    ('sun', 'Dom'),
-  ];
+  static const _dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+  String _dayLabel(BuildContext context, String key) {
+    final l = AppLocalizations.of(context);
+    switch (key) {
+      case 'mon': return l.dayMon;
+      case 'tue': return l.dayTue;
+      case 'wed': return l.dayWed;
+      case 'thu': return l.dayThu;
+      case 'fri': return l.dayFri;
+      case 'sat': return l.daySat;
+      case 'sun': return l.daySun;
+      default: return key;
+    }
+  }
 
   @override
   void initState() {
@@ -65,7 +73,7 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(isEditing ? 'Modifica Menu' : 'Nuovo Menu Fisso'),
+      title: Text(isEditing ? AppLocalizations.of(context).fixedMenuDialogEdit : AppLocalizations.of(context).fixedMenuDialogNew),
       content: SizedBox(
         width: 500,
         child: Form(
@@ -78,13 +86,13 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
                 // Name
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome *',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).fixedMenuDialogName,
                     hintText: 'es. Menu Degustazione',
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Inserisci il nome';
+                      return AppLocalizations.of(context).fixedMenuDialogNameRequired;
                     }
                     return null;
                   },
@@ -93,9 +101,9 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
                 // Description
                 TextFormField(
                   controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Descrizione',
-                    hintText: 'Descrizione opzionale del menu',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).fixedMenuDialogDescription,
+                    hintText: AppLocalizations.of(context).fixedMenuDialogDescriptionHint,
                   ),
                   maxLines: 2,
                 ),
@@ -103,19 +111,19 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
                 // Price
                 TextFormField(
                   controller: _priceController,
-                  decoration: const InputDecoration(
-                    labelText: 'Prezzo *',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).fixedMenuDialogPrice,
                     prefixText: '€ ',
                     hintText: '0.00',
                   ),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Inserisci il prezzo';
+                      return AppLocalizations.of(context).fixedMenuDialogPriceRequired;
                     }
                     final price = double.tryParse(value.replaceAll(',', '.'));
                     if (price == null || price < 0) {
-                      return 'Prezzo non valido';
+                      return AppLocalizations.of(context).fixedMenuDialogPriceInvalid;
                     }
                     return null;
                   },
@@ -124,15 +132,15 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
                 // Image URL
                 TextFormField(
                   controller: _imageUrlController,
-                  decoration: const InputDecoration(
-                    labelText: 'URL Immagine',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).fixedMenuDialogImageUrl,
                     hintText: 'https://...',
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 // Availability section
                 Text(
-                  'Disponibilita',
+                  AppLocalizations.of(context).fixedMenuDialogAvailability,
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -141,7 +149,7 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
                   children: [
                     Expanded(
                       child: RadioListTile<String>(
-                        title: const Text('Sempre'),
+                        title: Text(AppLocalizations.of(context).fixedMenuDialogAlways),
                         value: 'all',
                         groupValue: _availableFor,
                         onChanged: (v) => setState(() => _availableFor = v!),
@@ -151,7 +159,7 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
                     ),
                     Expanded(
                       child: RadioListTile<String>(
-                        title: const Text('Pranzo'),
+                        title: Text(AppLocalizations.of(context).fixedMenuDialogLunch),
                         value: 'lunch',
                         groupValue: _availableFor,
                         onChanged: (v) => setState(() => _availableFor = v!),
@@ -161,7 +169,7 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
                     ),
                     Expanded(
                       child: RadioListTile<String>(
-                        title: const Text('Cena'),
+                        title: Text(AppLocalizations.of(context).fixedMenuDialogDinner),
                         value: 'dinner',
                         groupValue: _availableFor,
                         onChanged: (v) => setState(() => _availableFor = v!),
@@ -174,7 +182,7 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
                 const SizedBox(height: AppSpacing.sm),
                 // Days
                 Text(
-                  'Giorni (lascia vuoto per tutti)',
+                  AppLocalizations.of(context).fixedMenuDialogDays,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -182,17 +190,17 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
                 const SizedBox(height: AppSpacing.xs),
                 Wrap(
                   spacing: AppSpacing.xs,
-                  children: _dayOptions.map((day) {
-                    final isSelected = _availableDays.contains(day.$1);
+                  children: _dayKeys.map((day) {
+                    final isSelected = _availableDays.contains(day);
                     return FilterChip(
-                      label: Text(day.$2),
+                      label: Text(_dayLabel(context, day)),
                       selected: isSelected,
                       onSelected: (selected) {
                         setState(() {
                           if (selected) {
-                            _availableDays = [..._availableDays, day.$1];
+                            _availableDays = [..._availableDays, day];
                           } else {
-                            _availableDays = _availableDays.where((d) => d != day.$1).toList();
+                            _availableDays = _availableDays.where((d) => d != day).toList();
                           }
                         });
                       },
@@ -202,8 +210,8 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
                 const SizedBox(height: AppSpacing.lg),
                 // Active toggle
                 SwitchListTile(
-                  title: const Text('Menu Attivo'),
-                  subtitle: const Text('Visibile ai clienti'),
+                  title: Text(AppLocalizations.of(context).fixedMenuDialogActive),
+                  subtitle: Text(AppLocalizations.of(context).fixedMenuDialogActiveSub),
                   value: _isActive,
                   onChanged: (v) => setState(() => _isActive = v),
                   contentPadding: EdgeInsets.zero,
@@ -218,14 +226,14 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
           TextButton(
             onPressed: _isLoading ? null : _deleteMenu,
             child: Text(
-              'Elimina',
-              style: TextStyle(color: AppColors.error),
+              AppLocalizations.of(context).commonDelete,
+              style: const TextStyle(color: AppColors.error),
             ),
           ),
         const Spacer(),
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Annulla'),
+          child: Text(AppLocalizations.of(context).commonCancel),
         ),
         FilledButton(
           onPressed: _isLoading ? null : _saveMenu,
@@ -235,7 +243,7 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text(isEditing ? 'Salva' : 'Crea'),
+              : Text(isEditing ? AppLocalizations.of(context).commonSave : AppLocalizations.of(context).tableDialogCreate),
         ),
       ],
     );
@@ -277,7 +285,7 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isEditing ? 'Menu aggiornato' : 'Menu creato'),
+            content: Text(isEditing ? AppLocalizations.of(context).fixedMenuDialogUpdated : AppLocalizations.of(context).fixedMenuDialogCreated),
             backgroundColor: AppColors.success,
           ),
         );
@@ -286,7 +294,7 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore: $e'),
+            content: Text(humanizeError(e, context)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -299,19 +307,21 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
   Future<void> _deleteMenu() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Elimina Menu'),
-        content: Text('Sei sicuro di voler eliminare "${widget.menu!.name}"?\n\n'
-            'Questa azione eliminerà anche tutte le portate e scelte associate.'),
+      builder: (dialogCtx) => AlertDialog(
+        title: Text(AppLocalizations.of(dialogCtx).fixedMenuDialogDeleteTitle),
+        content: Text(
+          '${AppLocalizations.of(dialogCtx).fixedMenuDialogDeleteConfirm(widget.menu!.name)}\n\n'
+          '${AppLocalizations.of(dialogCtx).fixedMenuDialogDeleteWarn}',
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Annulla'),
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: Text(AppLocalizations.of(dialogCtx).commonCancel),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Elimina'),
+            child: Text(AppLocalizations.of(dialogCtx).commonDelete),
           ),
         ],
       ),
@@ -328,8 +338,8 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Menu eliminato'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).fixedMenuDialogDeleted),
             backgroundColor: AppColors.success,
           ),
         );
@@ -338,7 +348,7 @@ class _FixedMenuDialogState extends ConsumerState<FixedMenuDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Errore: $e'),
+            content: Text(humanizeError(e, context)),
             backgroundColor: AppColors.error,
           ),
         );

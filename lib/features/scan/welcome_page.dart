@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/table.dart';
 import '../../data/providers/providers.dart';
+import '../../data/providers/supabase_provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../cart/cart_provider.dart';
 
 /// Default welcome page shown after scanning QR code.
@@ -74,6 +76,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     // Watch table stream for realtime status updates
     final tablesStream = ref.watch(tablesStreamProvider);
 
@@ -144,9 +147,9 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
               ),
               const SizedBox(height: AppSpacing.xl),
               // Welcome text
-              const Text(
-                'Benvenuto da',
-                style: TextStyle(
+              Text(
+                l.welcomeTitle,
+                style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 18,
                 ),
@@ -206,7 +209,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                           borderRadius: BorderRadius.circular(AppRadius.full),
                         ),
                         child: Text(
-                          isReserved ? 'PRENOTATO' : 'OCCUPATO',
+                          isReserved ? l.welcomeReserved : l.welcomeOccupied,
                           style: TextStyle(
                             color: isReserved ? Colors.amber : Colors.orange,
                             fontSize: 14,
@@ -226,7 +229,7 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                         ),
                         const SizedBox(width: AppSpacing.xs),
                         Text(
-                          '${currentTable.capacity} posti',
+                          l.welcomeSeats(currentTable.capacity),
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 16,
@@ -276,8 +279,8 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                       const SizedBox(height: AppSpacing.sm),
                       Text(
                         isReserved
-                            ? 'Questo tavolo è prenotato'
-                            : 'Questo tavolo è già occupato',
+                            ? l.welcomeTableReserved
+                            : l.welcomeTableOccupied,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 18,
@@ -286,9 +289,9 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: AppSpacing.xs),
-                      const Text(
-                        'Richiedi assistenza al personale',
-                        style: TextStyle(
+                      Text(
+                        l.welcomeAskStaff,
+                        style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 14,
                         ),
@@ -319,14 +322,14 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                               color: Theme.of(context).colorScheme.primary,
                             ),
                           )
-                        : const Row(
+                        : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.restaurant_menu, size: 24),
-                              SizedBox(width: AppSpacing.sm),
+                              const Icon(Icons.restaurant_menu, size: 24),
+                              const SizedBox(width: AppSpacing.sm),
                               Text(
-                                'Inizia a ordinare',
-                                style: TextStyle(
+                                l.welcomeStart,
+                                style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -338,17 +341,50 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
                 const SizedBox(height: AppSpacing.lg),
                 // Info text
                 Text(
-                  'Scansiona il menu, ordina e paga dal tuo telefono',
+                  l.welcomeInfo,
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 14,
                   ),
                   textAlign: TextAlign.center,
                 ),
+                // "Accedi" CTA — only when there's no consumer session yet.
+                // Scoped to the available-table branch since the
+                // occupied/reserved branch already pushes the layout to the
+                // bottom edge with its warning card.
+                const SizedBox(height: AppSpacing.sm),
+                _buildAuthCta(context, ref),
               ],
-              const SizedBox(height: AppSpacing.xl),
+              // Bottom padding is already provided by the outer
+              // `Padding(EdgeInsets.all(AppSpacing.xl))`. Adding another xl
+              // here doubled it and caused a ~2-50 px overflow when the
+              // tavolo-occupato warning is rendered.
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAuthCta(BuildContext context, WidgetRef ref) {
+    // Hide whenever ANY user is signed in (consumer OR staff). A staff
+    // member tapping "Accedi" gets redirected to the staff dashboard by
+    // app.dart's router, which causes a push+redirect race that produces
+    // ParentDataWidget / Navigator assertions. Easiest fix: don't offer it.
+    final isAuthenticated = ref.watch(isAuthenticatedProvider);
+    if (isAuthenticated) return const SizedBox.shrink();
+    final scanUrl = '/scan/${widget.table.qrCode}';
+    final returnTo = Uri.encodeComponent(scanUrl);
+    return TextButton(
+      onPressed: () =>
+          context.push('/consumer/login?returnTo=$returnTo'),
+      child: Text(
+        AppLocalizations.of(context).welcomeSignInCta,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.85),
+          fontSize: 14,
+          decoration: TextDecoration.underline,
+          decorationColor: Colors.white.withValues(alpha: 0.5),
         ),
       ),
     );

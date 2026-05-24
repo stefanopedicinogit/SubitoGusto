@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -7,9 +9,10 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/error_messages.dart';
 import '../../core/widgets/stripe_payment_element.dart';
-import '../../data/models/delivery_address.dart';
 import '../../data/providers/consumer_providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../marketplace/delivery_cart_provider.dart';
 
 /// Checkout page: order summary, address selection, payment
@@ -21,7 +24,6 @@ class CheckoutPage extends ConsumerStatefulWidget {
 }
 
 class _CheckoutPageState extends ConsumerState<CheckoutPage> {
-  DeliveryAddress? _selectedAddress;
   bool _isProcessing = false;
   String? _errorMessage;
 
@@ -30,39 +32,120 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   String? _orderId;
   bool _showPaymentElement = false;
 
-  // New address fields (if no saved addresses)
-  final _streetController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _postalCodeController = TextEditingController();
-  final _notesController = TextEditingController();
   final _orderNotesController = TextEditingController();
-  bool _showNewAddressForm = false;
+
+  // Promo code state
+  final _promoController = TextEditingController();
+  bool _validatingPromo = false;
+  String? _promoError;
+  String? _appliedPromoCode;
+  double _promoDiscount = 0;
 
   @override
   void dispose() {
-    _streetController.dispose();
-    _cityController.dispose();
-    _postalCodeController.dispose();
-    _notesController.dispose();
     _orderNotesController.dispose();
+    _promoController.dispose();
     super.dispose();
+  }
+
+  Future<void> _applyPromoCode() async {
+    final code = _promoController.text.trim();
+    if (code.isEmpty) return;
+    final cart = ref.read(deliveryCartProvider);
+    if (cart.restaurantId == null) return;
+
+    setState(() {
+      _validatingPromo = true;
+      _promoError = null;
+    });
+
+    try {
+      final response = await Supabase.instance.client.functions.invoke(
+        'validate-promo-code',
+        body: {
+          'code': code,
+          'restaurantId': cart.restaurantId,
+          'subtotal': cart.subtotal,
+        },
+      );
+      final data = response.data as Map<String, dynamic>;
+      if (data['valid'] == true) {
+        setState(() {
+          _appliedPromoCode = data['code'] as String;
+          _promoDiscount = (data['discountAmount'] as num).toDouble();
+          _promoController.text = data['code'] as String;
+        });
+      } else {
+        setState(() {
+          _promoError = (data['error'] as String?) ?? 'Codice non valido';
+          _appliedPromoCode = null;
+          _promoDiscount = 0;
+        });
+      }
+    } on FunctionException catch (e) {
+      // Edge function returned non-2xx. Try to extract the `error` field from
+      // the response body before falling back to a generic message.
+      setState(() {
+        _promoError = _extractFunctionErrorMessage(e) ?? humanizeError(e, context);
+        _appliedPromoCode = null;
+        _promoDiscount = 0;
+      });
+    } catch (e) {
+      setState(() {
+        _promoError = humanizeError(e, context);
+        _appliedPromoCode = null;
+        _promoDiscount = 0;
+      });
+    } finally {
+      if (mounted) setState(() => _validatingPromo = false);
+    }
+  }
+
+  /// Best-effort extraction of an `error` field from a [FunctionException]'s
+  /// response body, regardless of whether it was decoded to a Map or left as
+  /// a JSON string.
+  String? _extractFunctionErrorMessage(FunctionException e) {
+    final d = e.details;
+    if (d is Map) {
+      final err = d['error'];
+      if (err is String && err.isNotEmpty) return err;
+    }
+    if (d is String && d.isNotEmpty) {
+      try {
+        final decoded = const JsonDecoder().convert(d);
+        if (decoded is Map && decoded['error'] is String) {
+          return decoded['error'] as String;
+        }
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  void _removePromoCode() {
+    setState(() {
+      _appliedPromoCode = null;
+      _promoDiscount = 0;
+      _promoError = null;
+      _promoController.clear();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final cart = ref.watch(deliveryCartProvider);
-    final addressesAsync = ref.watch(deliveryAddressesProvider);
+    final defaultAddress = ref.watch(defaultDeliveryAddressProvider);
+    final l = AppLocalizations.of(context);
 
     if (cart.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Checkout')),
-        body: const Center(child: Text('Il carrello è vuoto')),
+        appBar: AppBar(title: Text(l.checkoutTitle)),
+        body: Center(child: Text(l.checkoutCartEmpty)),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Checkout'),
+        title: Text(l.checkoutTitle),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -92,7 +175,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 const SizedBox(height: AppSpacing.lg),
 
                 // Order items summary
-                _SectionTitle(title: 'Riepilogo ordine'),
+                _SectionTitle(title: l.checkoutSummary),
                 Card(
                   child: Column(
                     children: [
@@ -131,76 +214,132 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
-                // Delivery address
-                _SectionTitle(title: 'Indirizzo di consegna'),
-                addressesAsync.when(
-                  data: (addresses) {
-                    // Auto-select default address
-                    if (_selectedAddress == null && !_showNewAddressForm) {
-                      final defaultAddr = addresses.where((a) => a.isDefault).firstOrNull;
-                      if (defaultAddr != null) {
-                        _selectedAddress = defaultAddr;
-                      } else if (addresses.isNotEmpty) {
-                        _selectedAddress = addresses.first;
-                      }
-                    }
-
-                    return Card(
+                // Delivery address — read-only display.
+                // Selection happens in the profile's addresses page; if none
+                // exist, prompt the user to add one before checking out.
+                _SectionTitle(title: l.checkoutDeliveryAddress),
+                if (defaultAddress != null)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.location_on_outlined),
+                      title: Text(defaultAddress.label),
+                      subtitle: Text(defaultAddress.fullAddress),
+                    ),
+                  )
+                else
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (addresses.isNotEmpty && !_showNewAddressForm) ...[
-                            ...addresses.map((addr) => RadioListTile<String>(
-                                  title: Text(addr.label),
-                                  subtitle: Text(addr.fullAddress),
-                                  value: addr.id,
-                                  groupValue: _selectedAddress?.id,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      _selectedAddress = addresses
-                                          .firstWhere((a) => a.id == val);
-                                    });
-                                  },
-                                )),
-                            const Divider(height: 1),
-                            TextButton.icon(
-                              onPressed: () =>
-                                  setState(() => _showNewAddressForm = true),
-                              icon: const Icon(Icons.add),
-                              label: const Text('Nuovo indirizzo'),
+                          Text(
+                            l.checkoutNoAddress,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            l.checkoutNoAddressHint,
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
                             ),
-                          ] else ...[
-                            _buildNewAddressForm(),
-                            if (addresses.isNotEmpty)
-                              TextButton(
-                                onPressed: () =>
-                                    setState(() => _showNewAddressForm = false),
-                                child: const Text('Usa indirizzo salvato'),
-                              ),
-                          ],
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          OutlinedButton.icon(
+                            onPressed: () =>
+                                context.push('/consumer/addresses'),
+                            icon: const Icon(Icons.add_location_alt_outlined),
+                            label: Text(l.checkoutAddAddress),
+                          ),
                         ],
                       ),
-                    );
-                  },
-                  loading: () => const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(AppSpacing.lg),
-                      child: Center(child: CircularProgressIndicator()),
                     ),
                   ),
-                  error: (_, __) => Card(
-                    child: _buildNewAddressForm(),
+                const SizedBox(height: AppSpacing.lg),
+
+                // Order notes
+                _SectionTitle(title: l.checkoutOrderNotes),
+                TextField(
+                  controller: _orderNotesController,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    hintText: l.checkoutOrderNotesHint,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
-                // Order notes
-                _SectionTitle(title: 'Note per il ristorante'),
-                TextField(
-                  controller: _orderNotesController,
-                  maxLines: 2,
-                  decoration: const InputDecoration(
-                    hintText: 'Es. Suonare al citofono, allergie...',
-                    border: OutlineInputBorder(),
+                // Promo code
+                _SectionTitle(title: l.checkoutPromoCodeTitle),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_appliedPromoCode != null) ...[
+                          Row(
+                            children: [
+                              const Icon(Icons.check_circle,
+                                  color: AppColors.success, size: 20),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: Text(
+                                  l.checkoutPromoApplied(_appliedPromoCode!),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: _removePromoCode,
+                                child: Text(l.checkoutPromoRemove),
+                              ),
+                            ],
+                          ),
+                        ] else ...[
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _promoController,
+                                  textCapitalization:
+                                      TextCapitalization.characters,
+                                  decoration: InputDecoration(
+                                    hintText: l.checkoutPromoHint,
+                                    border: const OutlineInputBorder(),
+                                    isDense: true,
+                                  ),
+                                  onSubmitted: (_) => _applyPromoCode(),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              FilledButton(
+                                onPressed:
+                                    _validatingPromo ? null : _applyPromoCode,
+                                child: _validatingPromo
+                                    ? const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white),
+                                      )
+                                    : Text(l.checkoutPromoApply),
+                              ),
+                            ],
+                          ),
+                          if (_promoError != null) ...[
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              _promoError!,
+                              style: const TextStyle(
+                                  color: AppColors.error, fontSize: 13),
+                            ),
+                          ],
+                        ],
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
@@ -212,15 +351,25 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                     child: Column(
                       children: [
                         _TotalRow(
-                            label: 'Subtotale', value: cart.formatSubtotal()),
+                            label: l.checkoutSubtotal,
+                            value: cart.formatSubtotal()),
                         const SizedBox(height: AppSpacing.xs),
                         _TotalRow(
-                            label: 'Consegna',
+                            label: l.checkoutDelivery,
                             value: cart.formatDeliveryFee()),
+                        if (_promoDiscount > 0) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          _TotalRow(
+                            label: '${l.checkoutDiscount} ($_appliedPromoCode)',
+                            value: '-€ ${_promoDiscount.toStringAsFixed(2)}',
+                            valueColor: AppColors.success,
+                          ),
+                        ],
                         const Divider(height: AppSpacing.lg),
                         _TotalRow(
-                          label: 'Totale',
-                          value: cart.formatTotal(),
+                          label: l.checkoutTotal,
+                          value:
+                              '€ ${(cart.total - _promoDiscount).toStringAsFixed(2)}',
                           isBold: true,
                         ),
                       ],
@@ -255,7 +404,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
                 // Payment section
                 if (kIsWeb && _showPaymentElement && _clientSecret != null) ...[
-                  _SectionTitle(title: 'Pagamento'),
+                  _SectionTitle(title: l.checkoutTotal),
                   StripePaymentElement(
                     publishableKey: dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? '',
                     clientSecret: _clientSecret!,
@@ -275,7 +424,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: _isProcessing ? null : _processPayment,
+                      onPressed: (_isProcessing || defaultAddress == null)
+                          ? null
+                          : _processPayment,
                       icon: _isProcessing
                           ? const SizedBox(
                               width: 20,
@@ -288,8 +439,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                           : const Icon(Icons.payment),
                       label: Text(
                         _isProcessing
-                            ? 'Elaborazione...'
-                            : 'Paga ${cart.formatTotal()}',
+                            ? l.checkoutProcessing
+                            : l.checkoutPay(
+                                '€ ${(cart.total - _promoDiscount).toStringAsFixed(2)}'),
                       ),
                       style: FilledButton.styleFrom(
                         padding:
@@ -307,88 +459,11 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     );
   }
 
-  Widget _buildNewAddressForm() {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: _streetController,
-            decoration: const InputDecoration(
-              labelText: 'Via e numero civico',
-              prefixIcon: Icon(Icons.location_on),
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: TextField(
-                  controller: _cityController,
-                  decoration: const InputDecoration(
-                    labelText: 'Città',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: TextField(
-                  controller: _postalCodeController,
-                  decoration: const InputDecoration(
-                    labelText: 'CAP',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: _notesController,
-            decoration: const InputDecoration(
-              labelText: 'Note indirizzo (opzionale)',
-              hintText: 'Piano, scala, interno...',
-              border: OutlineInputBorder(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  bool _hasValidAddress() {
-    if (_selectedAddress != null && !_showNewAddressForm) return true;
-    return _streetController.text.trim().isNotEmpty &&
-        _cityController.text.trim().isNotEmpty &&
-        _postalCodeController.text.trim().isNotEmpty;
-  }
-
-  Map<String, String?> _getAddressSnapshot() {
-    if (_selectedAddress != null && !_showNewAddressForm) {
-      return {
-        'street': _selectedAddress!.street,
-        'city': _selectedAddress!.city,
-        'postalCode': _selectedAddress!.postalCode,
-        'notes': _selectedAddress!.notes,
-      };
-    }
-    return {
-      'street': _streetController.text.trim(),
-      'city': _cityController.text.trim(),
-      'postalCode': _postalCodeController.text.trim(),
-      'notes': _notesController.text.trim().isEmpty
-          ? null
-          : _notesController.text.trim(),
-    };
-  }
-
   Future<void> _processPayment() async {
-    if (!_hasValidAddress()) {
-      setState(() => _errorMessage = 'Inserisci un indirizzo di consegna');
+    final defaultAddress = ref.read(defaultDeliveryAddressProvider);
+    if (defaultAddress == null) {
+      setState(() => _errorMessage =
+          AppLocalizations.of(context).checkoutAddressRequired);
       return;
     }
 
@@ -403,29 +478,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     try {
       final client = Supabase.instance.client;
 
-      // Save new address if entered manually
-      String? addressId;
-      if (_showNewAddressForm || _selectedAddress == null) {
-        final userId = client.auth.currentUser?.id;
-        if (userId != null) {
-          final result = await client.from('delivery_addresses').insert({
-            'customer_id': userId,
-            'label': 'Consegna',
-            'street': _streetController.text.trim(),
-            'city': _cityController.text.trim(),
-            'postal_code': _postalCodeController.text.trim(),
-            'notes': _notesController.text.trim().isEmpty
-                ? null
-                : _notesController.text.trim(),
-          }).select().single();
-          addressId = result['id'] as String;
-          ref.invalidate(deliveryAddressesProvider);
-        }
-      } else {
-        addressId = _selectedAddress!.id;
-      }
-
-      // Build the request body — always use PaymentIntent (not Checkout Session)
       final requestBody = {
         'restaurantId': cart.restaurantId,
         'items': cart.items
@@ -441,11 +493,19 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
         'deliveryFee': cart.deliveryFee,
         'subtotal': cart.subtotal,
         'total': cart.total,
-        'deliveryAddressId': addressId,
-        'addressSnapshot': _getAddressSnapshot(),
+        'deliveryAddressId': defaultAddress.id,
+        'addressSnapshot': {
+          'street': defaultAddress.street,
+          'city': defaultAddress.city,
+          'postalCode': defaultAddress.postalCode,
+          'notes': defaultAddress.notes,
+          'latitude': defaultAddress.latitude,
+          'longitude': defaultAddress.longitude,
+        },
         'notes': _orderNotesController.text.trim().isEmpty
             ? null
             : _orderNotesController.text.trim(),
+        if (_appliedPromoCode != null) 'promoCode': _appliedPromoCode,
       };
 
       final response = await client.functions.invoke(
@@ -502,7 +562,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Errore: $e';
+        _errorMessage = humanizeError(e, context);
         _isProcessing = false;
       });
     }
@@ -532,11 +592,13 @@ class _TotalRow extends StatelessWidget {
   final String label;
   final String value;
   final bool isBold;
+  final Color? valueColor;
 
   const _TotalRow({
     required this.label,
     required this.value,
     this.isBold = false,
+    this.valueColor,
   });
 
   @override
@@ -554,6 +616,7 @@ class _TotalRow extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
+            color: valueColor,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
             fontSize: isBold ? 16 : 14,
           ),

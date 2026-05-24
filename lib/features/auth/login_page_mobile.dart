@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../core/widgets/language_switcher.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -72,6 +75,7 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -82,7 +86,10 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: AppSpacing.xl),
+                const Align(
+                  alignment: Alignment.topRight,
+                  child: LanguageSwitcher(),
+                ),
                 // Logo
                 Center(
                   child: Container(
@@ -93,13 +100,10 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
                       borderRadius: BorderRadius.circular(AppRadius.xl),
                     ),
                     child: const Center(
-                      child: Text(
-                        'M',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      child: Icon(
+                        Icons.restaurant,
+                        color: Colors.white,
+                        size: 48,
                       ),
                     ),
                   ),
@@ -116,14 +120,14 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
                 ),
                 const SizedBox(height: AppSpacing.xxl),
                 Text(
-                  'Bentornato',
+                  l.staffLoginTitle,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Accedi al pannello di gestione',
+                  l.staffLoginSubtitle,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -156,16 +160,16 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
+                  decoration: InputDecoration(
+                    labelText: l.consumerLoginEmailLabel,
+                    prefixIcon: const Icon(Icons.email_outlined),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Inserisci la tua email';
+                      return l.validationRequired;
                     }
                     if (!value.contains('@')) {
-                      return 'Inserisci un\'email valida';
+                      return l.validationEmail;
                     }
                     return null;
                   },
@@ -176,7 +180,7 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: l.consumerLoginPasswordLabel,
                     prefixIcon: const Icon(Icons.lock_outlined),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -193,7 +197,7 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Inserisci la tua password';
+                      return l.validationRequired;
                     }
                     return null;
                   },
@@ -224,7 +228,46 @@ class _LoginPageMobileState extends ConsumerState<LoginPageMobile> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Accedi'),
+                        : Text(l.staffLoginSubmit),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                // Register link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(l.staffLoginNoAccount),
+                    TextButton(
+                      onPressed: () => context.go('/register'),
+                      child: Text(l.staffLoginRegister),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                // Consumer login link
+                Center(
+                  child: TextButton(
+                    onPressed: () => context.go('/consumer/login'),
+                    child: Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '${l.staffLoginConsumerPrompt} ',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
+                          TextSpan(
+                            text: l.staffLoginConsumerLink,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],

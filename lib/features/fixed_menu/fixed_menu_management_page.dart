@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/responsive.dart';
 import '../../data/models/fixed_menu.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'fixed_menu_dialog.dart';
 import 'fixed_menu_courses_dialog.dart';
 
@@ -15,6 +17,8 @@ class FixedMenuManagementPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final menusAsync = ref.watch(fixedMenusStreamProvider);
+    final l = AppLocalizations.of(context);
+    final isMobile = context.isMobile;
 
     return Scaffold(
       body: Padding(
@@ -23,33 +27,40 @@ class FixedMenuManagementPage extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Menu Fissi',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        'Gestisci i menu a prezzo fisso del ristorante',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-                FilledButton.icon(
+            if (isMobile) ...[
+              Text(
+                l.fixedMenuSubtitle,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
                   onPressed: () => _showCreateDialog(context, ref),
                   icon: const Icon(Icons.add),
-                  label: const Text('Nuovo Menu'),
+                  label: Text(l.fixedMenuAdd),
                 ),
-              ],
-            ),
+              ),
+            ] else
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l.fixedMenuSubtitle,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                    ),
+                  ),
+                  FilledButton.icon(
+                    onPressed: () => _showCreateDialog(context, ref),
+                    icon: const Icon(Icons.add),
+                    label: Text(l.fixedMenuAdd),
+                  ),
+                ],
+              ),
             const SizedBox(height: AppSpacing.lg),
             // Content
             Expanded(
@@ -96,7 +107,7 @@ class FixedMenuManagementPage extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            'Nessun menu fisso',
+            AppLocalizations.of(context).fixedMenuEmpty,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -112,7 +123,7 @@ class FixedMenuManagementPage extends ConsumerWidget {
           FilledButton.icon(
             onPressed: () => _showCreateDialog(context, ref),
             icon: const Icon(Icons.add),
-            label: const Text('Crea Menu'),
+            label: Text(AppLocalizations.of(context).fixedMenuAdd),
           ),
         ],
       ),
@@ -166,7 +177,10 @@ class _FixedMenuCard extends ConsumerWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: menu.isActive
-                      ? [AppColors.burgundy, AppColors.burgundyLight]
+                      ? [
+                          Theme.of(context).colorScheme.primary,
+                          Theme.of(context).colorScheme.primaryContainer,
+                        ]
                       : [Colors.grey.shade400, Colors.grey.shade500],
                 ),
               ),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../core/widgets/language_switcher.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -72,8 +75,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
+      // Floating language switcher (top-right) so users can switch BEFORE
+      // signing in.
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        toolbarHeight: 48,
+        actions: const [
+          LanguageSwitcher(),
+          SizedBox(width: AppSpacing.sm),
+        ],
+      ),
+      extendBodyBehindAppBar: true,
       body: Row(
         children: [
           // Left side - Branding
@@ -102,13 +118,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         borderRadius: BorderRadius.circular(AppRadius.xl),
                       ),
                       child: Center(
-                        child: Text(
-                          'M',
-                          style: TextStyle(
-                            color: primaryColor,
-                            fontSize: 64,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Icon(
+                          Icons.restaurant,
+                          color: primaryColor,
+                          size: 64,
                         ),
                       ),
                     ),
@@ -147,7 +160,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Bentornato',
+                        l.staffLoginTitle,
                         style:
                             Theme.of(context).textTheme.headlineMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
@@ -155,7 +168,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
-                        'Accedi al pannello di gestione',
+                        l.staffLoginSubtitle,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                               color: AppColors.textSecondary,
                             ),
@@ -189,16 +202,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email_outlined),
+                        decoration: InputDecoration(
+                          labelText: l.consumerLoginEmailLabel,
+                          prefixIcon: const Icon(Icons.email_outlined),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Inserisci la tua email';
+                            return l.validationRequired;
                           }
                           if (!value.contains('@')) {
-                            return 'Inserisci un\'email valida';
+                            return l.validationEmail;
                           }
                           return null;
                         },
@@ -209,7 +222,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
-                          labelText: 'Password',
+                          labelText: l.consumerLoginPasswordLabel,
                           prefixIcon: const Icon(Icons.lock_outlined),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -226,7 +239,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Inserisci la tua password';
+                            return l.validationRequired;
                           }
                           return null;
                         },
@@ -257,7 +270,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Text('Accedi'),
+                              : Text(l.staffLoginSubmit),
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
@@ -265,12 +278,39 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text('Non hai un account?'),
+                          Text(l.staffLoginNoAccount),
                           TextButton(
                             onPressed: () => context.go('/register'),
-                            child: const Text('Registra la tua azienda'),
+                            child: Text(l.staffLoginRegister),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      // Consumer login link
+                      Center(
+                        child: TextButton(
+                          onPressed: () => context.go('/consumer/login'),
+                          child: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: '${l.staffLoginConsumerPrompt} ',
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: l.staffLoginConsumerLink,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),

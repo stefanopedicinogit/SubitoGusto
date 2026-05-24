@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/order_status_label.dart';
 import '../../data/models/order.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Dashboard page for mobile
 class DashboardPageMobile extends ConsumerWidget {
@@ -18,6 +20,7 @@ class DashboardPageMobile extends ConsumerWidget {
       loading: () => const AsyncValue<List<Order>>.loading(),
       error: (e, st) => AsyncValue<List<Order>>.error(e, st),
     );
+    final l = AppLocalizations.of(context);
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -34,8 +37,8 @@ class DashboardPageMobile extends ConsumerWidget {
               color: AppColors.gold.withValues(alpha: 0.1),
               child: ListTile(
                 leading: const Icon(Icons.qr_code, color: AppColors.gold),
-                title: const Text('Test Vista Cliente'),
-                subtitle: const Text('Simula scansione QR'),
+                title: Text(l.dashboardTestCustomerView),
+                subtitle: Text(l.dashboardTestCustomerViewSubtitleShort),
                 trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                 onTap: () => _showTableSelector(context),
               ),
@@ -51,7 +54,7 @@ class DashboardPageMobile extends ConsumerWidget {
               childAspectRatio: 1.5,
               children: [
                 _StatCardMobile(
-                  title: 'Ordini Attivi',
+                  title: l.dashboardActiveOrders,
                   value: ordersAsync.when(
                     data: (orders) => orders.length.toString(),
                     loading: () => '-',
@@ -61,7 +64,7 @@ class DashboardPageMobile extends ConsumerWidget {
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 _StatCardMobile(
-                  title: 'In Preparazione',
+                  title: l.statusPreparing,
                   value: ordersAsync.when(
                     data: (orders) =>
                         orders.where((o) => o.isPreparing).length.toString(),
@@ -72,7 +75,7 @@ class DashboardPageMobile extends ConsumerWidget {
                   color: AppColors.warning,
                 ),
                 _StatCardMobile(
-                  title: 'Pronti',
+                  title: l.statusReadyForDelivery,
                   value: ordersAsync.when(
                     data: (orders) =>
                         orders.where((o) => o.isReady).length.toString(),
@@ -83,7 +86,7 @@ class DashboardPageMobile extends ConsumerWidget {
                   color: AppColors.success,
                 ),
                 _StatCardMobile(
-                  title: 'In Attesa',
+                  title: l.statusPending,
                   value: ordersAsync.when(
                     data: (orders) =>
                         orders.where((o) => o.isPending).length.toString(),
@@ -101,12 +104,12 @@ class DashboardPageMobile extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Ordini Recenti',
+                  l.dashboardRecentOrders,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 TextButton(
                   onPressed: () {},
-                  child: const Text('Vedi tutti'),
+                  child: Text(l.dashboardSeeAll),
                 ),
               ],
             ),
@@ -127,7 +130,7 @@ class DashboardPageMobile extends ConsumerWidget {
                             ),
                             const SizedBox(height: AppSpacing.md),
                             Text(
-                              'Nessun ordine attivo',
+                              l.dashboardNoOrders,
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     color: AppColors.textSecondary,
                                   ),
@@ -181,7 +184,7 @@ class DashboardPageMobile extends ConsumerWidget {
                                       BorderRadius.circular(AppRadius.full),
                                 ),
                                 child: Text(
-                                  order.statusDisplayName,
+                                  localizedOrderStatus(context, order.status),
                                   style: Theme.of(context)
                                       .textTheme
                                       .labelSmall
@@ -271,11 +274,11 @@ class DashboardPageMobile extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Padding(
-                padding: EdgeInsets.all(AppSpacing.md),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
                 child: Text(
-                  'Seleziona un tavolo',
-                  style: TextStyle(
+                  AppLocalizations.of(context).dashboardSelectTableHeader,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),

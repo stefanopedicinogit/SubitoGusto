@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../theme/app_theme.dart';
 import '../../data/providers/notifications_provider.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Notification bell icon with badge
 class NotificationBell extends ConsumerWidget {
@@ -65,6 +66,7 @@ class NotificationsPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final notificationsState = ref.watch(notificationsProvider);
     final notifications = notificationsState.notifications;
+    final l = AppLocalizations.of(context);
 
     return Container(
       margin: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.xl),
@@ -92,7 +94,7 @@ class NotificationsPanel extends ConsumerWidget {
                 Icon(Icons.notifications, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  'Notifiche',
+                  l.notifPanelTitle,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -103,14 +105,14 @@ class NotificationsPanel extends ConsumerWidget {
                     onPressed: () {
                       ref.read(notificationsProvider.notifier).markAllAsRead();
                     },
-                    child: const Text('Segna tutte lette'),
+                    child: Text(l.notifPanelMarkAllRead),
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline),
                     onPressed: () {
                       ref.read(notificationsProvider.notifier).clearAll();
                     },
-                    tooltip: 'Cancella tutto',
+                    tooltip: l.notifPanelClear,
                   ),
                 ],
               ],
@@ -131,7 +133,7 @@ class NotificationsPanel extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      'Nessuna notifica',
+                      l.notifPanelEmpty,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             color: AppColors.textSecondary,
                           ),

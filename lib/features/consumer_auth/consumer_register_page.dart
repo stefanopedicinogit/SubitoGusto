@@ -1,10 +1,11 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/language_switcher.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Consumer registration page
 class ConsumerRegisterPage extends ConsumerStatefulWidget {
@@ -66,12 +67,20 @@ class _ConsumerRegisterPageState extends ConsumerState<ConsumerRegisterPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registrazione completata! Effettua il login.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).consumerRegisterSuccess),
             backgroundColor: AppColors.success,
           ),
         );
-        context.go('/consumer/login');
+        // Preserve returnTo so post-login the user still lands on their
+        // original QR scan page.
+        final returnTo = GoRouterState.of(
+          context,
+        ).uri.queryParameters['returnTo'];
+        final path = returnTo == null || returnTo.isEmpty
+            ? '/consumer/login'
+            : '/consumer/login?returnTo=${Uri.encodeComponent(returnTo)}';
+        context.go(path);
       }
     } catch (e) {
       setState(() {
@@ -84,52 +93,9 @@ class _ConsumerRegisterPageState extends ConsumerState<ConsumerRegisterPage> {
     }
   }
 
-  Future<void> _handleGoogleSignup() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      await Supabase.instance.client.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: kIsWeb ? null : 'io.supabase.subitogusto://login-callback/',
-      );
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Errore con Google. Riprova.';
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _handleAppleSignup() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      await Supabase.instance.client.auth.signInWithOAuth(
-        OAuthProvider.apple,
-        redirectTo: kIsWeb ? null : 'io.supabase.subitogusto://login-callback/',
-      );
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Errore con Apple. Riprova.';
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
   String _translateError(String error) {
-    if (error.contains('already registered') || error.contains('already exists')) {
+    if (error.contains('already registered') ||
+        error.contains('already exists')) {
       return 'Questa email è già registrata. Prova ad accedere.';
     }
     if (error.contains('password')) {
@@ -144,272 +110,300 @@ class _ConsumerRegisterPageState extends ConsumerState<ConsumerRegisterPage> {
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
+    final l = AppLocalizations.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/consumer/login'),
-        ),
-        title: const Text('Crea account'),
+    final nameField = TextFormField(
+      controller: _nameController,
+      textCapitalization: TextCapitalization.words,
+      decoration: InputDecoration(
+        labelText: l.consumerRegisterNameLabel,
+        prefixIcon: const Icon(Icons.person_outlined),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header
-                Center(
-                  child: Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                    ),
-                    child: Icon(
-                      Icons.person_add_outlined,
-                      color: primaryColor,
-                      size: 32,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Center(
-                  child: Text(
-                    'Registrati per ordinare',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Center(
-                  child: Text(
-                    'Scopri i ristoranti nella tua zona',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                // Social signup buttons
-                _SocialButton(
-                  onPressed: _isLoading ? null : _handleGoogleSignup,
-                  icon: Icons.g_mobiledata,
-                  label: 'Registrati con Google',
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _SocialButton(
-                  onPressed: _isLoading ? null : _handleAppleSignup,
-                  icon: Icons.apple,
-                  label: 'Registrati con Apple',
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                // Divider
-                Row(
-                  children: [
-                    const Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                      child: Text(
-                        'oppure con email',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                    const Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                // Error message
-                if (_errorMessage != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: AppColors.errorLight,
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.error_outline, color: AppColors.error),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: const TextStyle(color: AppColors.error),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                ],
-                // Name
-                TextFormField(
-                  controller: _nameController,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome',
-                    prefixIcon: Icon(Icons.person_outlined),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Inserisci il tuo nome';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppSpacing.md),
-                // Email
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Inserisci la tua email';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Inserisci un\'email valida';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppSpacing.md),
-                // Phone (optional)
-                TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Telefono (opzionale)',
-                    prefixIcon: Icon(Icons.phone_outlined),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                // Password
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outlined),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                      ),
-                      onPressed: () =>
-                          setState(() => _obscurePassword = !_obscurePassword),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Inserisci una password';
-                    }
-                    if (value.length < 6) {
-                      return 'La password deve avere almeno 6 caratteri';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppSpacing.md),
-                // Confirm password
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: _obscureConfirm,
-                  decoration: InputDecoration(
-                    labelText: 'Conferma password',
-                    prefixIcon: const Icon(Icons.lock_outlined),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirm
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                      ),
-                      onPressed: () =>
-                          setState(() => _obscureConfirm = !_obscureConfirm),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value != _passwordController.text) {
-                      return 'Le password non corrispondono';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                // Register button
-                SizedBox(
-                  height: 52,
-                  child: FilledButton(
-                    onPressed: _isLoading ? null : _handleRegister,
-                    child: _isLoading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Crea account'),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                // Login link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Hai già un account?'),
-                    TextButton(
-                      onPressed: () => context.go('/consumer/login'),
-                      child: const Text('Accedi'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return l.validationRequired;
+        }
+        return null;
+      },
+    );
+    final emailField = TextFormField(
+      controller: _emailController,
+      keyboardType: TextInputType.emailAddress,
+      decoration: InputDecoration(
+        labelText: l.consumerRegisterEmailLabel,
+        prefixIcon: const Icon(Icons.email_outlined),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return l.validationRequired;
+        }
+        if (!value.contains('@')) {
+          return l.validationEmail;
+        }
+        return null;
+      },
+    );
+    final phoneField = TextFormField(
+      controller: _phoneController,
+      keyboardType: TextInputType.phone,
+      decoration: InputDecoration(
+        labelText: l.profilePhoneLabel,
+        prefixIcon: const Icon(Icons.phone_outlined),
       ),
     );
-  }
-}
-
-class _SocialButton extends StatelessWidget {
-  final VoidCallback? onPressed;
-  final IconData icon;
-  final String label;
-
-  const _SocialButton({
-    required this.onPressed,
-    required this.icon,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 52,
-      child: OutlinedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 24),
-        label: Text(label),
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(color: Colors.grey.shade300),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md),
+    final passwordField = TextFormField(
+      controller: _passwordController,
+      obscureText: _obscurePassword,
+      decoration: InputDecoration(
+        labelText: l.consumerRegisterPasswordLabel,
+        prefixIcon: const Icon(Icons.lock_outlined),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscurePassword
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
           ),
+          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+        ),
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return l.validationRequired;
+        }
+        if (value.length < 6) {
+          return l.validationPasswordMin;
+        }
+        return null;
+      },
+    );
+    final confirmField = TextFormField(
+      controller: _confirmPasswordController,
+      obscureText: _obscureConfirm,
+      decoration: InputDecoration(
+        labelText: 'Conferma password',
+        prefixIcon: const Icon(Icons.lock_outlined),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscureConfirm
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+          ),
+          onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+        ),
+      ),
+      validator: (value) {
+        if (value != _passwordController.text) {
+          return 'Le password non corrispondono';
+        }
+        return null;
+      },
+    );
+
+    return Scaffold(
+      body: SafeArea(
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isDesktop = constraints.maxWidth >= 600;
+                  final maxFormWidth = isDesktop
+                      ? constraints.maxWidth * 0.7
+                      : constraints.maxWidth;
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxFormWidth),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const SizedBox(height: AppSpacing.xxl),
+                            // Logo
+                            Center(
+                              child: Container(
+                                width: 64,
+                                height: 64,
+                                decoration: BoxDecoration(
+                                  color: primaryColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.lg,
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.person_add_outlined,
+                                  color: primaryColor,
+                                  size: 32,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            Center(
+                              child: Text(
+                                'SubitoGusto',
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(
+                                      color: primaryColor,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Center(
+                              child: Text(
+                                'Ordina a domicilio dai migliori ristoranti',
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(color: AppColors.textSecondary),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xxl),
+                            // Error message
+                            if (_errorMessage != null) ...[
+                              Container(
+                                padding: const EdgeInsets.all(AppSpacing.md),
+                                decoration: BoxDecoration(
+                                  color: AppColors.errorLight,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.sm,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.error_outline,
+                                      color: AppColors.error,
+                                    ),
+                                    const SizedBox(width: AppSpacing.sm),
+                                    Expanded(
+                                      child: Text(
+                                        _errorMessage!,
+                                        style: const TextStyle(
+                                          color: AppColors.error,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                            ],
+                            // Form fields: desktop = 3 rows (Name|Email /
+                            // Phone / Password|Confirm); mobile = 5 stacked.
+                            if (isDesktop) ...[
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(child: nameField),
+                                  const SizedBox(width: AppSpacing.md),
+                                  Expanded(child: emailField),
+                                ],
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              phoneField,
+                              const SizedBox(height: AppSpacing.lg),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(child: passwordField),
+                                  const SizedBox(width: AppSpacing.md),
+                                  Expanded(child: confirmField),
+                                ],
+                              ),
+                            ] else ...[
+                              nameField,
+                              const SizedBox(height: AppSpacing.lg),
+                              emailField,
+                              const SizedBox(height: AppSpacing.lg),
+                              phoneField,
+                              const SizedBox(height: AppSpacing.lg),
+                              passwordField,
+                              const SizedBox(height: AppSpacing.lg),
+                              confirmField,
+                            ],
+                            const SizedBox(height: AppSpacing.xl),
+                            // Register button
+                            SizedBox(
+                              height: 52,
+                              child: FilledButton(
+                                onPressed: _isLoading ? null : _handleRegister,
+                                child: _isLoading
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : Text(l.consumerRegisterSubmit),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xl),
+                            // Login link
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(l.consumerRegisterHaveAccount),
+                                TextButton(
+                                  onPressed: () {
+                                    final returnTo = GoRouterState.of(
+                                      context,
+                                    ).uri.queryParameters['returnTo'];
+                                    final path =
+                                        returnTo == null || returnTo.isEmpty
+                                        ? '/consumer/login'
+                                        : '/consumer/login?returnTo=${Uri.encodeComponent(returnTo)}';
+                                    context.go(path);
+                                  },
+                                  child: Text(l.consumerRegisterSignIn),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            // Staff login link
+                            Center(
+                              child: TextButton(
+                                onPressed: () => context.go('/login'),
+                                child: Text.rich(
+                                  TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: 'Sei un ristoratore? ',
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: 'Accedi qui',
+                                        style: TextStyle(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xl),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const Positioned(
+              top: AppSpacing.md,
+              right: AppSpacing.md,
+              child: LanguageSwitcher(),
+            ),
+          ],
         ),
       ),
     );

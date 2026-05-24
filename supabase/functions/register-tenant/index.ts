@@ -31,6 +31,8 @@ serve(async (req) => {
       tenantName,
       tenantPhone,
       tenantAddress,
+      tenantLatitude,
+      tenantLongitude,
       tenantEmail,
       adminEmail,
       adminPassword,
@@ -66,6 +68,8 @@ serve(async (req) => {
         name: tenantName,
         phone: tenantPhone || null,
         address: tenantAddress || null,
+        latitude: typeof tenantLatitude === 'number' ? tenantLatitude : null,
+        longitude: typeof tenantLongitude === 'number' ? tenantLongitude : null,
         email: tenantEmail || null,
         settings: {
           currency: 'EUR',

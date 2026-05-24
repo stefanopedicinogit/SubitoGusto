@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 
+import '../utils/responsive.dart';
 import 'stripe_payment_element_stub.dart'
     if (dart.library.js_interop) 'stripe_payment_element_web.dart';
 
@@ -79,12 +80,18 @@ class _StripePaymentElementState extends State<StripePaymentElement> {
 
   @override
   Widget build(BuildContext context) {
+    // Mobile stacks Stripe's card fields vertically (CVC under expiry, etc.),
+    // so it needs more height than desktop's single-row layout.
+    final isMobile = Responsive.isMobile(context);
+    final elementHeight = isMobile ? 300.0 : 260.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // The Stripe Payment Element container
+        // The Stripe Payment Element container. Link is disabled in
+        // stripe_helper.js so the form is card-only.
         SizedBox(
-          height: 500,
+          height: elementHeight,
           child: buildStripeView(_viewId),
         ),
         const SizedBox(height: 16),

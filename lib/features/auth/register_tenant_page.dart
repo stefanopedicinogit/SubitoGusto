@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/language_switcher.dart';
+import '../../data/services/geocoding_service.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Registration page for new tenants (restaurants)
 class RegisterTenantPage extends ConsumerStatefulWidget {
@@ -56,13 +59,20 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
     try {
       final client = Supabase.instance.client;
 
+      final tenantAddress = _tenantAddressController.text.trim();
+      final geo = tenantAddress.isEmpty
+          ? null
+          : await GeocodingService().geocode(tenantAddress);
+
       // Call Edge Function to register tenant (bypasses RLS)
       final response = await client.functions.invoke(
         'register-tenant',
         body: {
           'tenantName': _tenantNameController.text.trim(),
           'tenantPhone': _tenantPhoneController.text.trim(),
-          'tenantAddress': _tenantAddressController.text.trim(),
+          'tenantAddress': tenantAddress,
+          if (geo != null) 'tenantLatitude': geo.lat,
+          if (geo != null) 'tenantLongitude': geo.lng,
           'tenantEmail': _tenantEmailController.text.trim(),
           'adminEmail': _adminEmailController.text.trim(),
           'adminPassword': _adminPasswordController.text,
@@ -79,8 +89,8 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
       if (mounted) {
         // Show success and redirect to login
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registrazione completata! Effettua il login.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).registerTenantSuccess),
             backgroundColor: AppColors.success,
           ),
         );
@@ -115,8 +125,19 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        toolbarHeight: 48,
+        actions: const [
+          LanguageSwitcher(),
+          SizedBox(width: AppSpacing.sm),
+        ],
+      ),
+      extendBodyBehindAppBar: true,
       body: Row(
         children: [
           // Left side - Branding
@@ -152,10 +173,10 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xl),
-                    const Text(
-                      'Registra la tua\nAzienda',
+                    Text(
+                      l.registerTenantTitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 36,
                         fontWeight: FontWeight.bold,
@@ -255,7 +276,7 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                                               color: Colors.white,
                                             ),
                                           )
-                                        : Text(_currentStep == 1 ? 'Registrati' : 'Continua'),
+                                        : Text(_currentStep == 1 ? l.registerTenantSubmit : l.registerTenantContinue),
                                   ),
                                   if (_currentStep > 0) ...[
                                     const SizedBox(width: AppSpacing.sm),
@@ -279,8 +300,8 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                                 children: [
                                   TextFormField(
                                     controller: _tenantNameController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Nome Azienda *',
+                                    decoration: InputDecoration(
+                                      labelText: l.registerTenantBusinessName,
                                       prefixIcon: Icon(Icons.business),
                                       hintText: 'Es: La Mia Azienda Srl',
                                     ),
@@ -295,8 +316,8 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                                   const SizedBox(height: AppSpacing.md),
                                   TextFormField(
                                     controller: _tenantPhoneController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Telefono',
+                                    decoration: InputDecoration(
+                                      labelText: l.registerTenantPhone,
                                       prefixIcon: Icon(Icons.phone),
                                       hintText: 'Es: +39 02 1234567',
                                     ),
@@ -305,8 +326,8 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                                   const SizedBox(height: AppSpacing.md),
                                   TextFormField(
                                     controller: _tenantAddressController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Indirizzo',
+                                    decoration: InputDecoration(
+                                      labelText: l.registerTenantAddress,
                                       prefixIcon: Icon(Icons.location_on),
                                       hintText: 'Es: Via Roma 1, Milano',
                                     ),
@@ -315,8 +336,8 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                                   const SizedBox(height: AppSpacing.md),
                                   TextFormField(
                                     controller: _tenantEmailController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Email Azienda',
+                                    decoration: InputDecoration(
+                                      labelText: l.registerTenantBusinessEmail,
                                       prefixIcon: Icon(Icons.email_outlined),
                                       hintText: 'Es: info@azienda.it',
                                     ),
@@ -338,9 +359,9 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                                       Expanded(
                                         child: TextFormField(
                                           controller: _adminFirstNameController,
-                                          decoration: const InputDecoration(
-                                            labelText: 'Nome',
-                                            prefixIcon: Icon(Icons.person_outline),
+                                          decoration: InputDecoration(
+                                            labelText: l.registerTenantFirstName,
+                                            prefixIcon: const Icon(Icons.person_outline),
                                           ),
                                           textCapitalization: TextCapitalization.words,
                                         ),
@@ -349,9 +370,9 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                                       Expanded(
                                         child: TextFormField(
                                           controller: _adminLastNameController,
-                                          decoration: const InputDecoration(
-                                            labelText: 'Cognome',
-                                            prefixIcon: Icon(Icons.person_outline),
+                                          decoration: InputDecoration(
+                                            labelText: l.registerTenantLastName,
+                                            prefixIcon: const Icon(Icons.person_outline),
                                           ),
                                           textCapitalization: TextCapitalization.words,
                                         ),
@@ -361,8 +382,8 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                                   const SizedBox(height: AppSpacing.md),
                                   TextFormField(
                                     controller: _adminEmailController,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Email di accesso *',
+                                    decoration: InputDecoration(
+                                      labelText: l.registerTenantAccountEmail,
                                       prefixIcon: Icon(Icons.email),
                                       hintText: 'La userai per accedere',
                                     ),
@@ -382,7 +403,7 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                                     controller: _adminPasswordController,
                                     obscureText: _obscurePassword,
                                     decoration: InputDecoration(
-                                      labelText: 'Password *',
+                                      labelText: l.registerTenantPassword,
                                       prefixIcon: const Icon(Icons.lock),
                                       hintText: 'Minimo 6 caratteri',
                                       suffixIcon: IconButton(
@@ -418,12 +439,39 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text('Hai già un account?'),
+                            Text(l.registerTenantHaveAccount),
                             TextButton(
                               onPressed: () => context.go('/login'),
-                              child: const Text('Accedi'),
+                              child: Text(l.registerTenantSignIn),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        // Consumer login link
+                        Center(
+                          child: TextButton(
+                            onPressed: () => context.go('/consumer/login'),
+                            child: Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: 'Sei un cliente? ',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: 'Accedi qui',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),

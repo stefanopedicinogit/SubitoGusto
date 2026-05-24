@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/menu_item.dart';
 import '../../data/providers/providers.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../cart/cart_provider.dart';
 import '../cart/cart_sheet.dart';
 import '../cart/menu_item_detail_sheet.dart';
@@ -80,13 +81,10 @@ class _CustomerMenuPageState extends ConsumerState<CustomerMenuPage> {
                     ],
                   ),
                   child: Center(
-                    child: Text(
-                      'M',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: Icon(
+                      Icons.restaurant,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 24,
                     ),
                   ),
                 ),
@@ -104,11 +102,11 @@ class _CustomerMenuPageState extends ConsumerState<CustomerMenuPage> {
                     ],
                   ),
                 ),
-                child: const SafeArea(
+                child: SafeArea(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text(
+                      const Text(
                         'SubitoGusto',
                         style: TextStyle(
                           color: Colors.white,
@@ -116,10 +114,10 @@ class _CustomerMenuPageState extends ConsumerState<CustomerMenuPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: AppSpacing.xs),
+                      const SizedBox(height: AppSpacing.xs),
                       Text(
-                        'Scegli i tuoi piatti preferiti',
-                        style: TextStyle(
+                        AppLocalizations.of(context).customerMenuChoose,
+                        style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 14,
                         ),
@@ -151,7 +149,7 @@ class _CustomerMenuPageState extends ConsumerState<CustomerMenuPage> {
                       if (index == 0) {
                         final isSelected = _selectedCategoryId == null && !_showingFixedMenus;
                         return _CategoryChip(
-                          name: 'Tutti',
+                          name: AppLocalizations.of(context).commonAll,
                           emoji: '🍽️',
                           isSelected: isSelected,
                           onTap: () => setState(() {
@@ -164,7 +162,7 @@ class _CustomerMenuPageState extends ConsumerState<CustomerMenuPage> {
                       // "Menu Fissi" chip (if available)
                       if (hasFixedMenus && index == 1) {
                         return _CategoryChip(
-                          name: 'Menu Fissi',
+                          name: AppLocalizations.of(context).customerMenuFixedTab,
                           emoji: '📋',
                           isSelected: _showingFixedMenus,
                           isSpecial: true,
@@ -217,7 +215,7 @@ class _CustomerMenuPageState extends ConsumerState<CustomerMenuPage> {
                           ),
                           const SizedBox(height: AppSpacing.md),
                           Text(
-                            'Nessun menu fisso disponibile',
+                            AppLocalizations.of(context).customerMenuNoFixed,
                             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                   color: AppColors.textSecondary,
                                 ),
@@ -281,8 +279,8 @@ class _CustomerMenuPageState extends ConsumerState<CustomerMenuPage> {
                           const SizedBox(height: AppSpacing.md),
                           Text(
                             _selectedCategoryId == null
-                                ? 'Menu non disponibile'
-                                : 'Nessun piatto in questa categoria',
+                                ? AppLocalizations.of(context).customerMenuNoMenu
+                                : AppLocalizations.of(context).customerMenuNoItems,
                             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                   color: AppColors.textSecondary,
                                 ),

@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
+import 'language_switcher.dart';
 import 'notifications_panel.dart';
 import '../../data/providers/providers.dart';
 import '../../features/orders/manual_order_dialog.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Desktop shell with sidebar and topbar
 class AppShell extends ConsumerWidget {
@@ -64,6 +66,7 @@ class _Sidebar extends ConsumerWidget {
     final canManageMenu = currentUser?.canManageMenu ?? true;
     final canManageTables = currentUser?.canManageTables ?? true;
     final isAdmin = currentUser?.isAdmin ?? true;
+    final l = AppLocalizations.of(context);
 
     return Container(
       width: 280,
@@ -148,14 +151,14 @@ class _Sidebar extends ConsumerWidget {
                 _NavItem(
                   icon: Icons.dashboard_outlined,
                   selectedIcon: Icons.dashboard,
-                  label: 'Dashboard',
+                  label: l.staffNavDashboard,
                   path: '/',
                   currentPath: currentPath,
                 ),
                 _NavItem(
                   icon: Icons.receipt_long_outlined,
                   selectedIcon: Icons.receipt_long,
-                  label: 'Ordini',
+                  label: l.staffNavOrders,
                   path: '/orders',
                   currentPath: currentPath,
                 ),
@@ -165,14 +168,14 @@ class _Sidebar extends ConsumerWidget {
                   _NavItem(
                     icon: Icons.restaurant_menu_outlined,
                     selectedIcon: Icons.restaurant_menu,
-                    label: 'Menu',
+                    label: l.staffNavMenu,
                     path: '/menu',
                     currentPath: currentPath,
                   ),
                   _NavItem(
                     icon: Icons.menu_book_outlined,
                     selectedIcon: Icons.menu_book,
-                    label: 'Menu Fissi',
+                    label: l.staffNavFixedMenu,
                     path: '/fixed-menus',
                     currentPath: currentPath,
                   ),
@@ -181,7 +184,7 @@ class _Sidebar extends ConsumerWidget {
                   _NavItem(
                     icon: Icons.table_restaurant_outlined,
                     selectedIcon: Icons.table_restaurant,
-                    label: 'Tavoli',
+                    label: l.staffNavTables,
                     path: '/tables',
                     currentPath: currentPath,
                   ),
@@ -201,7 +204,7 @@ class _Sidebar extends ConsumerWidget {
                   _NavItem(
                     icon: Icons.analytics_outlined,
                     selectedIcon: Icons.analytics,
-                    label: 'Statistiche',
+                    label: l.staffNavAnalytics,
                     path: '/analytics',
                     currentPath: currentPath,
                   ),
@@ -222,14 +225,14 @@ class _Sidebar extends ConsumerWidget {
                   _NavItem(
                     icon: Icons.people_outlined,
                     selectedIcon: Icons.people,
-                    label: 'Utenti',
+                    label: l.staffNavUsers,
                     path: '/users',
                     currentPath: currentPath,
                   ),
                   _NavItem(
                     icon: Icons.settings_outlined,
                     selectedIcon: Icons.settings,
-                    label: 'Impostazioni',
+                    label: l.staffNavSettings,
                     path: '/settings',
                     currentPath: currentPath,
                   ),
@@ -385,26 +388,27 @@ class _Topbar extends ConsumerWidget {
 
   const _Topbar({required this.currentPath});
 
-  String get _title {
+  String _title(BuildContext context) {
+    final l = AppLocalizations.of(context);
     switch (currentPath) {
       case '/':
-        return 'Dashboard';
+        return l.staffNavDashboard;
       case '/orders':
-        return 'Gestione Ordini';
+        return l.staffNavOrders;
       case '/menu':
-        return 'Gestione Menu';
+        return l.staffNavMenu;
       case '/tables':
-        return 'Gestione Tavoli';
+        return l.staffNavTables;
       case '/users':
-        return 'Gestione Utenti';
+        return l.staffNavUsers;
       case '/settings':
-        return 'Impostazioni';
+        return l.staffNavSettings;
       case '/analytics':
-        return 'Statistiche';
+        return l.staffNavAnalytics;
       case '/fixed-menus':
-        return 'Menu Fissi';
+        return l.staffNavFixedMenu;
       default:
-        return 'SubitoGusto';
+        return l.appName;
     }
   }
 
@@ -414,6 +418,7 @@ class _Topbar extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
     final currentUser = ref.watch(currentUserProvider).valueOrNull;
     final canManageOrders = currentUser?.canManageOrders ?? true;
+    final l = AppLocalizations.of(context);
 
     return Container(
       height: 80,
@@ -429,10 +434,12 @@ class _Topbar extends ConsumerWidget {
       child: Row(
         children: [
           Text(
-            _title,
+            _title(context),
             style: theme.textTheme.headlineSmall,
           ),
           const Spacer(),
+          // Language switcher
+          const LanguageSwitcher(),
           // Notification bell
           const NotificationBell(),
           const SizedBox(width: AppSpacing.sm),
@@ -446,7 +453,7 @@ class _Topbar extends ConsumerWidget {
                 );
               },
               icon: const Icon(Icons.add),
-              label: const Text('Nuovo Ordine'),
+              label: Text(l.manualOrderButton),
             ),
         ],
       ),
