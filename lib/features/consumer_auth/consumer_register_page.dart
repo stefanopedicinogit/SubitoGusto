@@ -7,7 +7,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/language_switcher.dart';
 import '../../l10n/generated/app_localizations.dart';
 
-/// Consumer registration page
+/// Consumer registration page for desktop (two-column: branding + form).
 class ConsumerRegisterPage extends ConsumerStatefulWidget {
   const ConsumerRegisterPage({super.key});
 
@@ -49,7 +49,6 @@ class _ConsumerRegisterPageState extends ConsumerState<ConsumerRegisterPage> {
     try {
       final client = Supabase.instance.client;
 
-      // Call Edge Function to register consumer
       final response = await client.functions.invoke(
         'register-consumer',
         body: {
@@ -72,8 +71,6 @@ class _ConsumerRegisterPageState extends ConsumerState<ConsumerRegisterPage> {
             backgroundColor: AppColors.success,
           ),
         );
-        // Preserve returnTo so post-login the user still lands on their
-        // original QR scan page.
         final returnTo = GoRouterState.of(
           context,
         ).uri.queryParameters['returnTo'];
@@ -200,211 +197,216 @@ class _ConsumerRegisterPageState extends ConsumerState<ConsumerRegisterPage> {
     );
 
     return Scaffold(
-      body: SafeArea(
-        child: Stack(
-          children: [
-            SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final isDesktop = constraints.maxWidth >= 600;
-                  final maxFormWidth = isDesktop
-                      ? constraints.maxWidth * 0.7
-                      : constraints.maxWidth;
-                  return Center(
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: maxFormWidth),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const SizedBox(height: AppSpacing.xxl),
-                            // Logo
-                            Center(
-                              child: Container(
-                                width: 64,
-                                height: 64,
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadius.lg,
-                                  ),
-                                ),
-                                child: Icon(
-                                  Icons.person_add_outlined,
-                                  color: primaryColor,
-                                  size: 32,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            Center(
-                              child: Text(
-                                'SubitoGusto',
-                                style: Theme.of(context).textTheme.headlineSmall
-                                    ?.copyWith(
-                                      color: primaryColor,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            Center(
-                              child: Text(
-                                'Ordina a domicilio dai migliori ristoranti',
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(color: AppColors.textSecondary),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xxl),
-                            // Error message
-                            if (_errorMessage != null) ...[
-                              Container(
-                                padding: const EdgeInsets.all(AppSpacing.md),
-                                decoration: BoxDecoration(
-                                  color: AppColors.errorLight,
-                                  borderRadius: BorderRadius.circular(
-                                    AppRadius.sm,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.error_outline,
-                                      color: AppColors.error,
-                                    ),
-                                    const SizedBox(width: AppSpacing.sm),
-                                    Expanded(
-                                      child: Text(
-                                        _errorMessage!,
-                                        style: const TextStyle(
-                                          color: AppColors.error,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: AppSpacing.md),
-                            ],
-                            // Form fields: desktop = 3 rows (Name|Email /
-                            // Phone / Password|Confirm); mobile = 5 stacked.
-                            if (isDesktop) ...[
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(child: nameField),
-                                  const SizedBox(width: AppSpacing.md),
-                                  Expanded(child: emailField),
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.lg),
-                              phoneField,
-                              const SizedBox(height: AppSpacing.lg),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(child: passwordField),
-                                  const SizedBox(width: AppSpacing.md),
-                                  Expanded(child: confirmField),
-                                ],
-                              ),
-                            ] else ...[
-                              nameField,
-                              const SizedBox(height: AppSpacing.lg),
-                              emailField,
-                              const SizedBox(height: AppSpacing.lg),
-                              phoneField,
-                              const SizedBox(height: AppSpacing.lg),
-                              passwordField,
-                              const SizedBox(height: AppSpacing.lg),
-                              confirmField,
-                            ],
-                            const SizedBox(height: AppSpacing.xl),
-                            // Register button
-                            SizedBox(
-                              height: 52,
-                              child: FilledButton(
-                                onPressed: _isLoading ? null : _handleRegister,
-                                child: _isLoading
-                                    ? const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : Text(l.consumerRegisterSubmit),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xl),
-                            // Login link
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(l.consumerRegisterHaveAccount),
-                                TextButton(
-                                  onPressed: () {
-                                    final returnTo = GoRouterState.of(
-                                      context,
-                                    ).uri.queryParameters['returnTo'];
-                                    final path =
-                                        returnTo == null || returnTo.isEmpty
-                                        ? '/consumer/login'
-                                        : '/consumer/login?returnTo=${Uri.encodeComponent(returnTo)}';
-                                    context.go(path);
-                                  },
-                                  child: Text(l.consumerRegisterSignIn),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            // Staff login link
-                            Center(
-                              child: TextButton(
-                                onPressed: () => context.go('/login'),
-                                child: Text.rich(
-                                  TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: 'Sei un ristoratore? ',
-                                        style: TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text: 'Accedi qui',
-                                        style: TextStyle(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.primary,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xl),
-                          ],
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        toolbarHeight: 48,
+        actions: const [
+          LanguageSwitcher(),
+          SizedBox(width: AppSpacing.sm),
+        ],
+      ),
+      extendBodyBehindAppBar: true,
+      body: Row(
+        children: [
+          // Left side - Branding
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    primaryColor,
+                    HSLColor.fromColor(primaryColor).withLightness(0.25).toColor(),
+                  ],
+                ),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(AppRadius.xl),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.delivery_dining,
+                          size: 64,
+                          color: primaryColor,
                         ),
                       ),
                     ),
-                  );
-                },
+                    const SizedBox(height: AppSpacing.xl),
+                    Text(
+                      l.consumerRegisterTitle,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'Ordina a domicilio\ndai migliori ristoranti',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const Positioned(
-              top: AppSpacing.md,
-              right: AppSpacing.md,
-              child: LanguageSwitcher(),
+          ),
+          // Right side - Registration form
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 500),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Crea il tuo account',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          l.consumerRegisterSubtitle,
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        if (_errorMessage != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            decoration: BoxDecoration(
+                              color: AppColors.errorLight,
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.error_outline,
+                                    color: AppColors.error),
+                                const SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style:
+                                        const TextStyle(color: AppColors.error),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                        ],
+                        // Desktop layout: Name | Email / Phone / Password | Confirm
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: nameField),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(child: emailField),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        phoneField,
+                        const SizedBox(height: AppSpacing.md),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: passwordField),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(child: confirmField),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        SizedBox(
+                          height: 56,
+                          child: FilledButton(
+                            onPressed: _isLoading ? null : _handleRegister,
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(l.consumerRegisterSubmit),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(l.consumerRegisterHaveAccount),
+                            TextButton(
+                              onPressed: () {
+                                final returnTo = GoRouterState.of(
+                                  context,
+                                ).uri.queryParameters['returnTo'];
+                                final path =
+                                    returnTo == null || returnTo.isEmpty
+                                        ? '/consumer/login'
+                                        : '/consumer/login?returnTo=${Uri.encodeComponent(returnTo)}';
+                                context.go(path);
+                              },
+                              child: Text(l.consumerRegisterSignIn),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Center(
+                          child: TextButton(
+                            onPressed: () => context.go('/login'),
+                            child: Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: 'Sei un ristoratore? ',
+                                    style: TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: 'Accedi qui',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

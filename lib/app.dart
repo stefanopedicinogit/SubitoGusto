@@ -33,7 +33,9 @@ import 'features/analytics/analytics_page.dart';
 import 'features/analytics/analytics_page_mobile.dart';
 import 'features/fixed_menu/fixed_menu_management_page.dart';
 import 'features/consumer_auth/consumer_login_page.dart';
+import 'features/consumer_auth/consumer_login_page_mobile.dart';
 import 'features/consumer_auth/consumer_register_page.dart';
+import 'features/consumer_auth/consumer_register_page_mobile.dart';
 import 'features/consumer_shell/consumer_shell.dart';
 import 'features/marketplace/marketplace_page.dart';
 import 'features/marketplace/restaurant_detail_page.dart';
@@ -149,11 +151,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ====================================================================
       GoRoute(
         path: '/consumer/login',
-        builder: (context, state) => const ConsumerLoginPage(),
+        builder: (context, state) => _AdaptivePage(
+          desktop: const ConsumerLoginPage(),
+          mobile: const ConsumerLoginPageMobile(),
+        ),
       ),
       GoRoute(
         path: '/consumer/register',
-        builder: (context, state) => const ConsumerRegisterPage(),
+        builder: (context, state) => _AdaptivePage(
+          desktop: const ConsumerRegisterPage(),
+          mobile: const ConsumerRegisterPageMobile(),
+        ),
       ),
       GoRoute(
         path: '/consumer/location',
