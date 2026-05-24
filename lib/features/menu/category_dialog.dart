@@ -246,31 +246,36 @@ class _CategoryDialogState extends ConsumerState<CategoryDialog> {
         ),
       ),
       actions: [
-        if (isEditing)
-          TextButton(
-            onPressed: _isLoading ? null : _delete,
-            child: Text(
-              AppLocalizations.of(context).commonDelete,
-              style: const TextStyle(color: AppColors.error),
+        Row(
+          children: [
+            if (isEditing)
+              TextButton(
+                onPressed: _isLoading ? null : _delete,
+                child: Text(
+                  AppLocalizations.of(context).commonDelete,
+                  style: const TextStyle(color: AppColors.error),
+                ),
+              ),
+            const Spacer(),
+            TextButton(
+              onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+              child: Text(AppLocalizations.of(context).commonCancel),
             ),
-          ),
-        const Spacer(),
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-          child: Text(AppLocalizations.of(context).commonCancel),
-        ),
-        FilledButton(
-          onPressed: _isLoading ? null : _save,
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : Text(isEditing ? AppLocalizations.of(context).commonSave : AppLocalizations.of(context).tableDialogCreate),
+            const SizedBox(width: AppSpacing.sm),
+            FilledButton(
+              onPressed: _isLoading ? null : _save,
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(isEditing ? AppLocalizations.of(context).commonSave : AppLocalizations.of(context).tableDialogCreate),
+            ),
+          ],
         ),
       ],
     );
