@@ -86,7 +86,7 @@ async function sendFcmToToken(
 serve(async (req) => {
   try {
     const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
-    const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')
+    const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOOK_KEY')
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const fcmServiceAccountRaw = Deno.env.get('FCM_SERVICE_ACCOUNT_JSON')
