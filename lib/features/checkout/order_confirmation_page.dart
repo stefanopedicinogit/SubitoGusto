@@ -36,26 +36,28 @@ class OrderConfirmationPage extends ConsumerWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 500),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.xl),
-              child: orderAsync.when(
-                data: (order) {
-                  if (order == null) return _buildContent(context, null, null);
-                  final tenantAsync =
-                      ref.watch(restaurantDetailProvider(order.tenantId));
-                  return _buildContent(
-                    context,
-                    order,
-                    tenantAsync.valueOrNull == null
-                        ? null
-                        : _formatEta(order, tenantAsync.valueOrNull!),
-                  );
-                },
-                loading: () => const CircularProgressIndicator(),
-                error: (e, _) => _buildContent(context, null, null),
+        child: SingleChildScrollView(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                child: orderAsync.when(
+                  data: (order) {
+                    if (order == null) return _buildContent(context, null, null);
+                    final tenantAsync =
+                        ref.watch(restaurantDetailProvider(order.tenantId));
+                    return _buildContent(
+                      context,
+                      order,
+                      tenantAsync.valueOrNull == null
+                          ? null
+                          : _formatEta(order, tenantAsync.valueOrNull!),
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => _buildContent(context, null, null),
+                ),
               ),
             ),
           ),
@@ -81,7 +83,6 @@ class OrderConfirmationPage extends ConsumerWidget {
   Widget _buildContent(BuildContext context, DeliveryOrder? order, String? eta) {
     final l = AppLocalizations.of(context);
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Success icon
         Container(
