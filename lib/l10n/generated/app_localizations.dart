@@ -2438,6 +2438,102 @@ abstract class AppLocalizations {
   /// **'Registrazione completata! Effettua il login.'**
   String get registerTenantSuccess;
 
+  /// No description provided for @registerTenantTagline.
+  ///
+  /// In it, this message translates to:
+  /// **'Inizia a gestire la tua attività\nin pochi minuti'**
+  String get registerTenantTagline;
+
+  /// No description provided for @registerTenantCreateAccount.
+  ///
+  /// In it, this message translates to:
+  /// **'Crea il tuo account'**
+  String get registerTenantCreateAccount;
+
+  /// No description provided for @registerTenantFormSubtitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Compila i dati per registrare la tua azienda'**
+  String get registerTenantFormSubtitle;
+
+  /// No description provided for @registerTenantStep1Title.
+  ///
+  /// In it, this message translates to:
+  /// **'Dati Azienda'**
+  String get registerTenantStep1Title;
+
+  /// No description provided for @registerTenantStep1Subtitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Informazioni della tua attività'**
+  String get registerTenantStep1Subtitle;
+
+  /// No description provided for @registerTenantStep2Title.
+  ///
+  /// In it, this message translates to:
+  /// **'Account Amministratore'**
+  String get registerTenantStep2Title;
+
+  /// No description provided for @registerTenantStep2Subtitle.
+  ///
+  /// In it, this message translates to:
+  /// **'Le tue credenziali di accesso'**
+  String get registerTenantStep2Subtitle;
+
+  /// No description provided for @registerTenantAccountEmailHint.
+  ///
+  /// In it, this message translates to:
+  /// **'La userai per accedere'**
+  String get registerTenantAccountEmailHint;
+
+  /// No description provided for @registerTenantPasswordHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Minimo 6 caratteri'**
+  String get registerTenantPasswordHint;
+
+  /// No description provided for @registerTenantConsumerPrompt.
+  ///
+  /// In it, this message translates to:
+  /// **'Sei un cliente?'**
+  String get registerTenantConsumerPrompt;
+
+  /// No description provided for @registerTenantConsumerLink.
+  ///
+  /// In it, this message translates to:
+  /// **'Accedi qui'**
+  String get registerTenantConsumerLink;
+
+  /// No description provided for @registerTenantNameRequired.
+  ///
+  /// In it, this message translates to:
+  /// **'Il nome è obbligatorio'**
+  String get registerTenantNameRequired;
+
+  /// No description provided for @registerTenantEmailRequired.
+  ///
+  /// In it, this message translates to:
+  /// **'L\'email è obbligatoria'**
+  String get registerTenantEmailRequired;
+
+  /// No description provided for @registerTenantEmailInvalid.
+  ///
+  /// In it, this message translates to:
+  /// **'Inserisci un\'email valida'**
+  String get registerTenantEmailInvalid;
+
+  /// No description provided for @registerTenantPasswordRequired.
+  ///
+  /// In it, this message translates to:
+  /// **'La password è obbligatoria'**
+  String get registerTenantPasswordRequired;
+
+  /// No description provided for @registerTenantPasswordShort.
+  ///
+  /// In it, this message translates to:
+  /// **'La password deve essere di almeno 6 caratteri'**
+  String get registerTenantPasswordShort;
+
   /// No description provided for @ordersStaffPaymentPaid.
   ///
   /// In it, this message translates to:

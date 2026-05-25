@@ -1230,6 +1230,57 @@ class AppLocalizationsIt extends AppLocalizations {
       'Registrazione completata! Effettua il login.';
 
   @override
+  String get registerTenantTagline =>
+      'Inizia a gestire la tua attività\nin pochi minuti';
+
+  @override
+  String get registerTenantCreateAccount => 'Crea il tuo account';
+
+  @override
+  String get registerTenantFormSubtitle =>
+      'Compila i dati per registrare la tua azienda';
+
+  @override
+  String get registerTenantStep1Title => 'Dati Azienda';
+
+  @override
+  String get registerTenantStep1Subtitle => 'Informazioni della tua attività';
+
+  @override
+  String get registerTenantStep2Title => 'Account Amministratore';
+
+  @override
+  String get registerTenantStep2Subtitle => 'Le tue credenziali di accesso';
+
+  @override
+  String get registerTenantAccountEmailHint => 'La userai per accedere';
+
+  @override
+  String get registerTenantPasswordHint => 'Minimo 6 caratteri';
+
+  @override
+  String get registerTenantConsumerPrompt => 'Sei un cliente?';
+
+  @override
+  String get registerTenantConsumerLink => 'Accedi qui';
+
+  @override
+  String get registerTenantNameRequired => 'Il nome è obbligatorio';
+
+  @override
+  String get registerTenantEmailRequired => 'L\'email è obbligatoria';
+
+  @override
+  String get registerTenantEmailInvalid => 'Inserisci un\'email valida';
+
+  @override
+  String get registerTenantPasswordRequired => 'La password è obbligatoria';
+
+  @override
+  String get registerTenantPasswordShort =>
+      'La password deve essere di almeno 6 caratteri';
+
+  @override
   String get ordersStaffPaymentPaid => 'Pagato';
 
   @override

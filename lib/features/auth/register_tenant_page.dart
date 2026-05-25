@@ -51,6 +51,8 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final l = AppLocalizations.of(context);
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -82,7 +84,7 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
       );
 
       if (response.status != 200) {
-        final error = response.data?['error'] ?? 'Errore sconosciuto';
+        final error = response.data?['error'] ?? l.errorGeneric;
         throw Exception(error);
       }
 
@@ -98,7 +100,7 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = _translateAuthError(e.toString());
+        _errorMessage = _translateAuthError(e.toString(), l);
       });
     } finally {
       if (mounted) {
@@ -109,17 +111,11 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
     }
   }
 
-  String _translateAuthError(String message) {
-    if (message.contains('already registered')) {
-      return 'Questa email è già registrata';
-    }
-    if (message.contains('invalid email')) {
-      return 'Email non valida';
-    }
-    if (message.contains('weak password') || message.contains('at least')) {
-      return 'La password deve essere di almeno 6 caratteri';
-    }
-    return message;
+  String _translateAuthError(String message, AppLocalizations l) {
+    if (message.contains('already registered')) return l.errorAuthAlreadyRegistered;
+    if (message.contains('invalid email')) return l.validationEmail;
+    if (message.contains('weak password') || message.contains('at least')) return l.errorAuthPasswordShort;
+    return l.errorGeneric;
   }
 
   @override
@@ -184,7 +180,7 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      'Inizia a gestire la tua attività\nin pochi minuti',
+                      l.registerTenantTagline,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.8),
@@ -209,14 +205,14 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Crea il tuo account',
+                          l.registerTenantCreateAccount,
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         Text(
-                          'Compila i dati per registrare la tua azienda',
+                          l.registerTenantFormSubtitle,
                           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                 color: AppColors.textSecondary,
                               ),
@@ -282,7 +278,7 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                                     const SizedBox(width: AppSpacing.sm),
                                     TextButton(
                                       onPressed: _isLoading ? null : details.onStepCancel,
-                                      child: const Text('Indietro'),
+                                      child: Text(l.commonBack),
                                     ),
                                   ],
                                 ],
@@ -292,8 +288,8 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                           steps: [
                             // Step 1: Tenant info
                             Step(
-                              title: const Text('Dati Azienda'),
-                              subtitle: const Text('Informazioni della tua attività'),
+                              title: Text(l.registerTenantStep1Title),
+                              subtitle: Text(l.registerTenantStep1Subtitle),
                               isActive: _currentStep >= 0,
                               state: _currentStep > 0 ? StepState.complete : StepState.indexed,
                               content: Column(
@@ -308,7 +304,7 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                                     textCapitalization: TextCapitalization.words,
                                     validator: (value) {
                                       if (value == null || value.trim().isEmpty) {
-                                        return 'Il nome è obbligatorio';
+                                        return l.registerTenantNameRequired;
                                       }
                                       return null;
                                     },
@@ -348,8 +344,8 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                             ),
                             // Step 2: Admin user info
                             Step(
-                              title: const Text('Account Amministratore'),
-                              subtitle: const Text('Le tue credenziali di accesso'),
+                              title: Text(l.registerTenantStep2Title),
+                              subtitle: Text(l.registerTenantStep2Subtitle),
                               isActive: _currentStep >= 1,
                               state: _currentStep > 1 ? StepState.complete : StepState.indexed,
                               content: Column(
@@ -385,15 +381,15 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                                     decoration: InputDecoration(
                                       labelText: l.registerTenantAccountEmail,
                                       prefixIcon: Icon(Icons.email),
-                                      hintText: 'La userai per accedere',
+                                      hintText: l.registerTenantAccountEmailHint,
                                     ),
                                     keyboardType: TextInputType.emailAddress,
                                     validator: (value) {
                                       if (value == null || value.trim().isEmpty) {
-                                        return 'L\'email è obbligatoria';
+                                        return l.registerTenantEmailRequired;
                                       }
                                       if (!value.contains('@') || !value.contains('.')) {
-                                        return 'Inserisci un\'email valida';
+                                        return l.registerTenantEmailInvalid;
                                       }
                                       return null;
                                     },
@@ -405,7 +401,7 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                                     decoration: InputDecoration(
                                       labelText: l.registerTenantPassword,
                                       prefixIcon: const Icon(Icons.lock),
-                                      hintText: 'Minimo 6 caratteri',
+                                      hintText: l.registerTenantPasswordHint,
                                       suffixIcon: IconButton(
                                         icon: Icon(
                                           _obscurePassword
@@ -421,10 +417,10 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                                     ),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
-                                        return 'La password è obbligatoria';
+                                        return l.registerTenantPasswordRequired;
                                       }
                                       if (value.length < 6) {
-                                        return 'La password deve essere di almeno 6 caratteri';
+                                        return l.registerTenantPasswordShort;
                                       }
                                       return null;
                                     },
@@ -455,14 +451,14 @@ class _RegisterTenantPageState extends ConsumerState<RegisterTenantPage> {
                               TextSpan(
                                 children: [
                                   TextSpan(
-                                    text: 'Sei un cliente? ',
+                                    text: l.registerTenantConsumerPrompt,
                                     style: TextStyle(
                                       color: AppColors.textSecondary,
                                       fontSize: 13,
                                     ),
                                   ),
                                   TextSpan(
-                                    text: 'Accedi qui',
+                                    text: l.registerTenantConsumerLink,
                                     style: TextStyle(
                                       color: Theme.of(context).colorScheme.primary,
                                       fontSize: 13,
