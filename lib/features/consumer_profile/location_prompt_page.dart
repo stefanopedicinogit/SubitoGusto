@@ -24,17 +24,27 @@ class LocationPromptPage extends ConsumerStatefulWidget {
 
 class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
   final _formKey = GlobalKey<FormState>();
-  final _labelController = TextEditingController(text: 'Casa');
+  final _labelController = TextEditingController();
   final _streetController = TextEditingController();
   final _cityController = TextEditingController();
   final _postalController = TextEditingController();
 
+  bool _labelInitialized = false;
   bool _isLocating = false;
   bool _isSaving = false;
   bool _usedGeolocation = false;
   double? _lat;
   double? _lng;
   String? _errorMessage;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_labelInitialized) {
+      _labelInitialized = true;
+      _labelController.text = AppLocalizations.of(context).locationLabelDefault;
+    }
+  }
 
   @override
   void dispose() {
@@ -46,6 +56,7 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
   }
 
   Future<void> _useMyLocation() async {
+    final l = AppLocalizations.of(context);
     setState(() {
       _isLocating = true;
       _errorMessage = null;
@@ -58,16 +69,14 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
 
     switch (result) {
       case GeolocationDenied():
-        setState(() => _errorMessage =
-            'Permesso negato. Inserisci manualmente il tuo indirizzo.');
+        setState(() => _errorMessage = l.editAddressPermissionDenied);
       case GeolocationUnavailable(:final message):
-        setState(() => _errorMessage = 'Posizione non disponibile: $message');
+        setState(() => _errorMessage = l.editAddressUnavailable(message));
       case GeolocationSuccess(:final lat, :final lng):
         final reverse = await GeocodingService().reverse(lat, lng);
         if (!mounted) return;
         if (reverse == null) {
-          setState(() => _errorMessage =
-              'Impossibile leggere l\'indirizzo. Riprova o inserisci manualmente.');
+          setState(() => _errorMessage = l.editAddressReverseFail);
           return;
         }
         setState(() {
@@ -83,6 +92,7 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
   }
 
   Future<void> _useSavedAddress(DeliveryAddress addr) async {
+    final l = AppLocalizations.of(context);
     setState(() {
       _isSaving = true;
       _errorMessage = null;
@@ -91,7 +101,7 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
       final client = Supabase.instance.client;
       final userId = client.auth.currentUser?.id;
       if (userId == null) {
-        setState(() => _errorMessage = 'Sessione scaduta. Accedi di nuovo.');
+        setState(() => _errorMessage = l.locationSessionExpired);
         return;
       }
 
@@ -116,6 +126,7 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    final l = AppLocalizations.of(context);
 
     setState(() {
       _isSaving = true;
@@ -126,7 +137,7 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
       final client = Supabase.instance.client;
       final userId = client.auth.currentUser?.id;
       if (userId == null) {
-        setState(() => _errorMessage = 'Sessione scaduta. Accedi di nuovo.');
+        setState(() => _errorMessage = l.locationSessionExpired);
         return;
       }
 
@@ -182,7 +193,7 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
         }
       } else {
         final label = _labelController.text.trim().isEmpty
-            ? 'Casa'
+            ? l.locationLabelDefault
             : _labelController.text.trim();
         await client.from('delivery_addresses').insert({
           'customer_id': userId,
@@ -202,7 +213,7 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
         context.go('/marketplace');
       }
     } catch (e) {
-      setState(() => _errorMessage = 'Errore nel salvataggio: $e');
+      setState(() => _errorMessage = l.settingsSaveError('$e'));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -210,6 +221,7 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final primaryColor = Theme.of(context).colorScheme.primary;
     final addressesAsync = ref.watch(deliveryAddressesProvider);
     final savedAddresses = addressesAsync.valueOrNull ?? const [];
@@ -243,7 +255,7 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
                 const SizedBox(height: AppSpacing.md),
                 Center(
                   child: Text(
-                    AppLocalizations.of(context).locationPromptTitle,
+                    l.locationPromptTitle,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
@@ -253,7 +265,7 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
                 const SizedBox(height: AppSpacing.xs),
                 Center(
                   child: Text(
-                    'Ci serve per mostrarti i ristoranti che consegnano a te',
+                    l.locationPromptSubtitle,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.textSecondary,
@@ -268,7 +280,7 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
                   ),
                 ] else if (savedAddresses.isNotEmpty) ...[
                   Text(
-                    'I tuoi indirizzi salvati',
+                    l.locationSavedAddresses,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -339,7 +351,7 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: AppSpacing.md),
                         child: Text(
-                          'oppure aggiungi nuovo',
+                          l.locationOrAddNew,
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 13,
@@ -389,8 +401,8 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
                             )
                           : const Icon(Icons.my_location),
                       label: Text(_isLocating
-                          ? 'Localizzazione in corso...'
-                          : 'Usa la mia posizione'),
+                          ? l.editAddressLocating
+                          : l.editAddressUseMyLocation),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -401,7 +413,7 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: AppSpacing.md),
                         child: Text(
-                          'oppure inserisci',
+                          l.locationOrEnter,
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 13,
@@ -416,20 +428,20 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
                 TextFormField(
                   controller: _labelController,
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    labelText: 'Etichetta (es. Casa, Ufficio)',
-                    prefixIcon: Icon(Icons.label_outline),
+                  decoration: InputDecoration(
+                    labelText: l.locationLabelHint,
+                    prefixIcon: const Icon(Icons.label_outline),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _streetController,
-                  decoration: const InputDecoration(
-                    labelText: 'Via e numero civico',
-                    prefixIcon: Icon(Icons.location_on_outlined),
+                  decoration: InputDecoration(
+                    labelText: l.addressesStreet,
+                    prefixIcon: const Icon(Icons.location_on_outlined),
                   ),
                   validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Inserisci la via' : null,
+                      v == null || v.trim().isEmpty ? l.locationStreetRequired : null,
                   onChanged: (_) {
                     if (_lat != null || _usedGeolocation) {
                       _lat = null;
@@ -445,11 +457,11 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
                       flex: 2,
                       child: TextFormField(
                         controller: _cityController,
-                        decoration: const InputDecoration(
-                          labelText: 'Città',
+                        decoration: InputDecoration(
+                          labelText: l.addressesCity,
                         ),
                         validator: (v) => v == null || v.trim().isEmpty
-                            ? 'Inserisci la città'
+                            ? l.locationCityRequired
                             : null,
                         onChanged: (_) {
                           if (_lat != null || _usedGeolocation) {
@@ -464,11 +476,11 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
                     Expanded(
                       child: TextFormField(
                         controller: _postalController,
-                        decoration: const InputDecoration(
-                          labelText: 'CAP',
+                        decoration: InputDecoration(
+                          labelText: l.addressesPostalCode,
                         ),
                         validator: (v) => v == null || v.trim().isEmpty
-                            ? 'CAP'
+                            ? l.addressesPostalCode
                             : null,
                         onChanged: (_) {
                           if (_lat != null || _usedGeolocation) {
@@ -495,7 +507,7 @@ class _LocationPromptPageState extends ConsumerState<LocationPromptPage> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Continua'),
+                        : Text(l.commonContinue),
                   ),
                 ),
               ],

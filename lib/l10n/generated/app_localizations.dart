@@ -1478,6 +1478,54 @@ abstract class AppLocalizations {
   /// **'Continua senza indirizzo'**
   String get locationPromptSkip;
 
+  /// No description provided for @locationSavedAddresses.
+  ///
+  /// In it, this message translates to:
+  /// **'I tuoi indirizzi salvati'**
+  String get locationSavedAddresses;
+
+  /// No description provided for @locationOrAddNew.
+  ///
+  /// In it, this message translates to:
+  /// **'oppure aggiungi nuovo'**
+  String get locationOrAddNew;
+
+  /// No description provided for @locationOrEnter.
+  ///
+  /// In it, this message translates to:
+  /// **'oppure inserisci'**
+  String get locationOrEnter;
+
+  /// No description provided for @locationLabelHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Etichetta (es. Casa, Ufficio)'**
+  String get locationLabelHint;
+
+  /// No description provided for @locationStreetRequired.
+  ///
+  /// In it, this message translates to:
+  /// **'Inserisci la via'**
+  String get locationStreetRequired;
+
+  /// No description provided for @locationCityRequired.
+  ///
+  /// In it, this message translates to:
+  /// **'Inserisci la città'**
+  String get locationCityRequired;
+
+  /// No description provided for @locationSessionExpired.
+  ///
+  /// In it, this message translates to:
+  /// **'Sessione scaduta. Accedi di nuovo.'**
+  String get locationSessionExpired;
+
+  /// No description provided for @locationLabelDefault.
+  ///
+  /// In it, this message translates to:
+  /// **'Casa'**
+  String get locationLabelDefault;
+
   /// No description provided for @welcomeTitle.
   ///
   /// In it, this message translates to:

@@ -736,6 +736,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locationPromptSkip => 'Continue without address';
 
   @override
+  String get locationSavedAddresses => 'Your saved addresses';
+
+  @override
+  String get locationOrAddNew => 'or add a new one';
+
+  @override
+  String get locationOrEnter => 'or enter';
+
+  @override
+  String get locationLabelHint => 'Label (e.g. Home, Office)';
+
+  @override
+  String get locationStreetRequired => 'Enter the street';
+
+  @override
+  String get locationCityRequired => 'Enter the city';
+
+  @override
+  String get locationSessionExpired => 'Session expired. Please sign in again.';
+
+  @override
+  String get locationLabelDefault => 'Home';
+
+  @override
   String get welcomeTitle => 'Welcome to';
 
   @override

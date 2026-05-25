@@ -741,6 +741,30 @@ class AppLocalizationsIt extends AppLocalizations {
   String get locationPromptSkip => 'Continua senza indirizzo';
 
   @override
+  String get locationSavedAddresses => 'I tuoi indirizzi salvati';
+
+  @override
+  String get locationOrAddNew => 'oppure aggiungi nuovo';
+
+  @override
+  String get locationOrEnter => 'oppure inserisci';
+
+  @override
+  String get locationLabelHint => 'Etichetta (es. Casa, Ufficio)';
+
+  @override
+  String get locationStreetRequired => 'Inserisci la via';
+
+  @override
+  String get locationCityRequired => 'Inserisci la città';
+
+  @override
+  String get locationSessionExpired => 'Sessione scaduta. Accedi di nuovo.';
+
+  @override
+  String get locationLabelDefault => 'Casa';
+
+  @override
   String get welcomeTitle => 'Benvenuto da';
 
   @override
