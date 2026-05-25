@@ -118,8 +118,36 @@ embedded a service-role key).
 
 ## Step 8 — Point the Flutter app at the new project
 
-In the app config (Supabase `url` + `anonKey` passed to `Supabase.initialize`),
-replace with the new project's URL and **anon** key. Rebuild the app.
+The app reads its config from a `.env` file at the repo root (loaded by
+`flutter_dotenv` in `lib/main.dart`, bundled as an asset via `pubspec.yaml`).
+A fresh clone has no `.env` — create one from the template:
+
+```bash
+cp .env.example .env
+```
+
+Then fill in the new project's values (`SUPABASE_URL`, `SUPABASE_ANON_KEY` from
+Project Settings → API, and your Stripe **publishable** key). Put only those
+client-safe keys here — server secrets go in Step 5, not in `.env`.
+
+## Step 9 — Firebase (push notifications)
+
+`lib/firebase_options.dart` is committed but points at the **original** Firebase
+project. Regenerate it for your own project:
+
+```bash
+dart pub global activate flutterfire_cli
+flutterfire configure
+```
+
+Push is optional — the app runs without it (it just won't send notifications).
+
+## Step 10 — Run
+
+```bash
+flutter pub get
+flutter run -d chrome   # web is the fastest target for a first smoke test
+```
 
 ---
 
