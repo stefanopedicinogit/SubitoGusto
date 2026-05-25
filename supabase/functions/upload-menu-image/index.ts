@@ -138,7 +138,7 @@ serve(async (req) => {
       .from(updateTable)
       .update({ image_url: publicUrl, updated_at: new Date().toISOString() })
       .eq('id', updateId)
-      .eq('restaurant_id', tenantId)
+      .eq('tenant_id', tenantId)
 
     if (updateError) {
       console.error('DB update error:', updateError)
