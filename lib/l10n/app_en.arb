@@ -879,5 +879,38 @@
   "analyticsPeriodWeek": "Week",
   "analyticsPeriodMonth": "Month",
   "analyticsPeriodYear": "Year",
-  "analyticsTotalRevenue": "Total Revenue"
+  "analyticsTotalRevenue": "Total Revenue",
+
+  "cartMinOrderMissing": "€ {amount} more to reach the minimum order",
+  "@cartMinOrderMissing": { "placeholders": { "amount": { "type": "String" } } },
+
+  "menuItemAllergens": "Allergens",
+  "menuItemNotesLabel": "Notes (optional)",
+  "menuItemNotesHint": "e.g. no onion, well done...",
+  "menuItemAddWithPrice": "Add - € {price}",
+  "@menuItemAddWithPrice": { "placeholders": { "price": { "type": "String" } } },
+
+  "allergenGluten": "Gluten",
+  "allergenLactose": "Lactose",
+  "allergenEggs": "Eggs",
+  "allergenFish": "Fish",
+  "allergenCrustaceans": "Crustaceans",
+  "allergenPeanuts": "Peanuts",
+  "allergenTreeNuts": "Tree nuts",
+  "allergenSoy": "Soy",
+  "allergenCelery": "Celery",
+  "allergenMustard": "Mustard",
+  "allergenSesame": "Sesame",
+  "allergenSulphites": "Sulphites",
+  "allergenLupin": "Lupin",
+  "allergenMolluscs": "Molluscs",
+
+  "tagSpicy": "Spicy",
+  "tagChefsChoice": "Chef's Choice",
+
+  "favoritesRemove": "Remove from favorites",
+  "favoritesNoRestaurants": "No favourite restaurants",
+  "favoritesNoRestaurantsHint": "Tap the heart on a restaurant\nto save it here",
+  "favoritesNoItems": "No favourite dishes",
+  "favoritesNoItemsHint": "Tap the heart on a dish\nto save it here"
 }

@@ -71,9 +71,9 @@ class DeliveryCartSheet extends ConsumerWidget {
                       ref.read(deliveryCartProvider.notifier).clear();
                       Navigator.of(context).pop();
                     },
-                    child: const Text(
-                      'Svuota',
-                      style: TextStyle(color: AppColors.error),
+                    child: Text(
+                      l.cartClear,
+                      style: const TextStyle(color: AppColors.error),
                     ),
                   ),
               ],
@@ -93,7 +93,7 @@ class DeliveryCartSheet extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Text(
-                    'Il carrello è vuoto',
+                    l.cartEmpty,
                     style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ],
@@ -128,17 +128,17 @@ class DeliveryCartSheet extends ConsumerWidget {
               child: Column(
                 children: [
                   _TotalRow(
-                    label: 'Subtotale',
+                    label: l.checkoutSubtotal,
                     value: cart.formatSubtotal(),
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   _TotalRow(
-                    label: 'Consegna',
+                    label: l.checkoutDelivery,
                     value: cart.formatDeliveryFee(),
                   ),
                   const Divider(height: AppSpacing.lg),
                   _TotalRow(
-                    label: 'Totale',
+                    label: l.checkoutTotal,
                     value: cart.formatTotal(),
                     isBold: true,
                   ),
@@ -152,17 +152,20 @@ class DeliveryCartSheet extends ConsumerWidget {
                       ),
                       child: Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.info_outline,
                             size: 16,
                             color: AppColors.warning,
                           ),
                           const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            'Mancano € ${cart.amountToMinOrder.toStringAsFixed(2)} per l\'ordine minimo',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.warning,
+                          Expanded(
+                            child: Text(
+                              l.cartMinOrderMissing(
+                                  cart.amountToMinOrder.toStringAsFixed(2)),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.warning,
+                              ),
                             ),
                           ),
                         ],

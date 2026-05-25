@@ -2457,4 +2457,84 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get analyticsTotalRevenue => 'Total Revenue';
+
+  @override
+  String cartMinOrderMissing(String amount) =>
+      '€ $amount more to reach the minimum order';
+
+  @override
+  String get menuItemAllergens => 'Allergens';
+
+  @override
+  String get menuItemNotesLabel => 'Notes (optional)';
+
+  @override
+  String get menuItemNotesHint => 'e.g. no onion, well done...';
+
+  @override
+  String menuItemAddWithPrice(String price) => 'Add - € $price';
+
+  @override
+  String get allergenGluten => 'Gluten';
+
+  @override
+  String get allergenLactose => 'Lactose';
+
+  @override
+  String get allergenEggs => 'Eggs';
+
+  @override
+  String get allergenFish => 'Fish';
+
+  @override
+  String get allergenCrustaceans => 'Crustaceans';
+
+  @override
+  String get allergenPeanuts => 'Peanuts';
+
+  @override
+  String get allergenTreeNuts => 'Tree nuts';
+
+  @override
+  String get allergenSoy => 'Soy';
+
+  @override
+  String get allergenCelery => 'Celery';
+
+  @override
+  String get allergenMustard => 'Mustard';
+
+  @override
+  String get allergenSesame => 'Sesame';
+
+  @override
+  String get allergenSulphites => 'Sulphites';
+
+  @override
+  String get allergenLupin => 'Lupin';
+
+  @override
+  String get allergenMolluscs => 'Molluscs';
+
+  @override
+  String get tagSpicy => 'Spicy';
+
+  @override
+  String get tagChefsChoice => "Chef's Choice";
+
+  @override
+  String get favoritesRemove => 'Remove from favorites';
+
+  @override
+  String get favoritesNoRestaurants => 'No favourite restaurants';
+
+  @override
+  String get favoritesNoRestaurantsHint =>
+      'Tap the heart on a restaurant\nto save it here';
+
+  @override
+  String get favoritesNoItems => 'No favourite dishes';
+
+  @override
+  String get favoritesNoItemsHint => 'Tap the heart on a dish\nto save it here';
 }

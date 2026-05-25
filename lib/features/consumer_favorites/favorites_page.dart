@@ -80,6 +80,7 @@ class _FavoriteRestaurantsList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final restaurantsAsync = ref.watch(favoriteRestaurantsProvider);
     return RefreshIndicator(
       onRefresh: () async {
@@ -91,9 +92,8 @@ class _FavoriteRestaurantsList extends ConsumerWidget {
           if (restaurants.isEmpty) {
             return _EmptyState(
               icon: Icons.favorite_border,
-              title: 'Nessun ristorante preferito',
-              subtitle:
-                  'Tocca il cuore su un ristorante per\nsalvarlo qui',
+              title: l.favoritesNoRestaurants,
+              subtitle: l.favoritesNoRestaurantsHint,
             );
           }
           return ListView.builder(
@@ -120,6 +120,7 @@ class _FavoriteItemsList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final itemsAsync = ref.watch(favoriteMenuItemsProvider);
     return RefreshIndicator(
       onRefresh: () async {
@@ -131,8 +132,8 @@ class _FavoriteItemsList extends ConsumerWidget {
           if (items.isEmpty) {
             return _EmptyState(
               icon: Icons.favorite_border,
-              title: 'Nessun piatto preferito',
-              subtitle: 'Tocca il cuore su un piatto per\nsalvarlo qui',
+              title: l.favoritesNoItems,
+              subtitle: l.favoritesNoItemsHint,
             );
           }
           return ListView.builder(
@@ -265,17 +266,17 @@ class _FavoriteRestaurantCard extends ConsumerWidget {
                 isLiked: true,
                 onTap: () => ref
                     .read(favoritesControllerProvider)
-                    .toggleRestaurant(restaurant.id),
+                    .removeFavoriteRestaurant(restaurant.id),
               ),
             ),
             if (restaurant.vacationMode)
-              const Positioned(
+              Positioned(
                 top: AppSpacing.sm,
                 left: AppSpacing.sm,
                 child: _VacationBadge(),
               )
             else if (!restaurant.hasStripeAccount)
-              const Positioned(
+              Positioned(
                 top: AppSpacing.sm,
                 left: AppSpacing.sm,
                 child: _UnavailableBadge(),
@@ -306,6 +307,7 @@ class _FavoriteMenuItemCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final MenuItem item = favorite.item;
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -371,13 +373,11 @@ class _FavoriteMenuItemCard extends ConsumerWidget {
                 ),
               ),
               IconButton(
-                onPressed: () =>
-                    ref.read(favoritesControllerProvider).toggleMenuItem(
-                          menuItemId: item.id,
-                          tenantId: favorite.restaurantId,
-                        ),
+                onPressed: () => ref
+                    .read(favoritesControllerProvider)
+                    .removeFavoriteMenuItem(item.id),
                 icon: const Icon(Icons.favorite, color: Colors.red),
-                tooltip: 'Rimuovi dai preferiti',
+                tooltip: l.favoritesRemove,
               ),
             ],
           ),
@@ -401,6 +401,7 @@ class _UnavailableBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
@@ -410,9 +411,9 @@ class _UnavailableBadge extends StatelessWidget {
         color: Colors.black.withValues(alpha: 0.65),
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
-      child: const Text(
-        'Non disponibile',
-        style: TextStyle(
+      child: Text(
+        l.restaurantUnavailableBadge,
+        style: const TextStyle(
           color: Colors.white,
           fontSize: 11,
           fontWeight: FontWeight.w600,
@@ -427,6 +428,7 @@ class _VacationBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
@@ -436,14 +438,14 @@ class _VacationBadge extends StatelessWidget {
         color: AppColors.warning,
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.beach_access, color: Colors.white, size: 12),
-          SizedBox(width: 4),
+          const Icon(Icons.beach_access, color: Colors.white, size: 12),
+          const SizedBox(width: 4),
           Text(
-            'In vacanza',
-            style: TextStyle(
+            l.restaurantVacationBadge,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 11,
               fontWeight: FontWeight.w600,

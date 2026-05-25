@@ -4813,6 +4813,162 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Ricavi Totali'**
   String get analyticsTotalRevenue;
+
+  /// No description provided for @cartMinOrderMissing.
+  ///
+  /// In it, this message translates to:
+  /// **'Mancano € {amount} per l\'ordine minimo'**
+  String cartMinOrderMissing(String amount);
+
+  /// No description provided for @menuItemAllergens.
+  ///
+  /// In it, this message translates to:
+  /// **'Allergeni'**
+  String get menuItemAllergens;
+
+  /// No description provided for @menuItemNotesLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'Note (opzionale)'**
+  String get menuItemNotesLabel;
+
+  /// No description provided for @menuItemNotesHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Es: senza cipolla, ben cotto...'**
+  String get menuItemNotesHint;
+
+  /// No description provided for @menuItemAddWithPrice.
+  ///
+  /// In it, this message translates to:
+  /// **'Aggiungi - € {price}'**
+  String menuItemAddWithPrice(String price);
+
+  /// No description provided for @allergenGluten.
+  ///
+  /// In it, this message translates to:
+  /// **'Glutine'**
+  String get allergenGluten;
+
+  /// No description provided for @allergenLactose.
+  ///
+  /// In it, this message translates to:
+  /// **'Lattosio'**
+  String get allergenLactose;
+
+  /// No description provided for @allergenEggs.
+  ///
+  /// In it, this message translates to:
+  /// **'Uova'**
+  String get allergenEggs;
+
+  /// No description provided for @allergenFish.
+  ///
+  /// In it, this message translates to:
+  /// **'Pesce'**
+  String get allergenFish;
+
+  /// No description provided for @allergenCrustaceans.
+  ///
+  /// In it, this message translates to:
+  /// **'Crostacei'**
+  String get allergenCrustaceans;
+
+  /// No description provided for @allergenPeanuts.
+  ///
+  /// In it, this message translates to:
+  /// **'Arachidi'**
+  String get allergenPeanuts;
+
+  /// No description provided for @allergenTreeNuts.
+  ///
+  /// In it, this message translates to:
+  /// **'Frutta a guscio'**
+  String get allergenTreeNuts;
+
+  /// No description provided for @allergenSoy.
+  ///
+  /// In it, this message translates to:
+  /// **'Soia'**
+  String get allergenSoy;
+
+  /// No description provided for @allergenCelery.
+  ///
+  /// In it, this message translates to:
+  /// **'Sedano'**
+  String get allergenCelery;
+
+  /// No description provided for @allergenMustard.
+  ///
+  /// In it, this message translates to:
+  /// **'Senape'**
+  String get allergenMustard;
+
+  /// No description provided for @allergenSesame.
+  ///
+  /// In it, this message translates to:
+  /// **'Sesamo'**
+  String get allergenSesame;
+
+  /// No description provided for @allergenSulphites.
+  ///
+  /// In it, this message translates to:
+  /// **'Solfiti'**
+  String get allergenSulphites;
+
+  /// No description provided for @allergenLupin.
+  ///
+  /// In it, this message translates to:
+  /// **'Lupini'**
+  String get allergenLupin;
+
+  /// No description provided for @allergenMolluscs.
+  ///
+  /// In it, this message translates to:
+  /// **'Molluschi'**
+  String get allergenMolluscs;
+
+  /// No description provided for @tagSpicy.
+  ///
+  /// In it, this message translates to:
+  /// **'Piccante'**
+  String get tagSpicy;
+
+  /// No description provided for @tagChefsChoice.
+  ///
+  /// In it, this message translates to:
+  /// **'Scelta dello Chef'**
+  String get tagChefsChoice;
+
+  /// No description provided for @favoritesRemove.
+  ///
+  /// In it, this message translates to:
+  /// **'Rimuovi dai preferiti'**
+  String get favoritesRemove;
+
+  /// No description provided for @favoritesNoRestaurants.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun ristorante preferito'**
+  String get favoritesNoRestaurants;
+
+  /// No description provided for @favoritesNoRestaurantsHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Tocca il cuore su un ristorante per\nsalvarlo qui'**
+  String get favoritesNoRestaurantsHint;
+
+  /// No description provided for @favoritesNoItems.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun piatto preferito'**
+  String get favoritesNoItems;
+
+  /// No description provided for @favoritesNoItemsHint.
+  ///
+  /// In it, this message translates to:
+  /// **'Tocca il cuore su un piatto per\nsalvarlo qui'**
+  String get favoritesNoItemsHint;
 }
 
 class _AppLocalizationsDelegate

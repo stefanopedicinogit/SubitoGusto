@@ -160,6 +160,54 @@ class FavoritesController {
     }
   }
 
+  /// Unconditionally removes a restaurant from favorites.
+  /// Use this when you already know the item is a favorite (e.g. favorites page).
+  Future<void> removeFavoriteRestaurant(String tenantId) async {
+    final userId = _ref.read(currentUserIdProvider);
+    if (userId == null) return;
+    final client = _ref.read(supabaseClientProvider);
+    final notifier = _ref.read(favoriteRestaurantIdsProvider.notifier);
+
+    final current = _ref.read(favoriteRestaurantIdsProvider).valueOrNull ??
+        const <String>{};
+    notifier.overwrite(current.toSet()..remove(tenantId));
+
+    try {
+      await client
+          .from('customer_favorite_restaurants')
+          .delete()
+          .eq('customer_id', userId)
+          .eq('tenant_id', tenantId);
+      _ref.invalidate(favoriteRestaurantsProvider);
+    } catch (_) {
+      notifier.overwrite(current);
+    }
+  }
+
+  /// Unconditionally removes a menu item from favorites.
+  /// Use this when you already know the item is a favorite (e.g. favorites page).
+  Future<void> removeFavoriteMenuItem(String menuItemId) async {
+    final userId = _ref.read(currentUserIdProvider);
+    if (userId == null) return;
+    final client = _ref.read(supabaseClientProvider);
+    final notifier = _ref.read(favoriteMenuItemIdsProvider.notifier);
+
+    final current =
+        _ref.read(favoriteMenuItemIdsProvider).valueOrNull ?? const <String>{};
+    notifier.overwrite(current.toSet()..remove(menuItemId));
+
+    try {
+      await client
+          .from('customer_favorite_items')
+          .delete()
+          .eq('customer_id', userId)
+          .eq('menu_item_id', menuItemId);
+      _ref.invalidate(favoriteMenuItemsProvider);
+    } catch (_) {
+      notifier.overwrite(current);
+    }
+  }
+
   Future<void> toggleMenuItem({
     required String menuItemId,
     required String tenantId,

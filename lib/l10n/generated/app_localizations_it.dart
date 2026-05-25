@@ -2473,4 +2473,84 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get analyticsTotalRevenue => 'Ricavi Totali';
+
+  @override
+  String cartMinOrderMissing(String amount) =>
+      'Mancano € $amount per l\'ordine minimo';
+
+  @override
+  String get menuItemAllergens => 'Allergeni';
+
+  @override
+  String get menuItemNotesLabel => 'Note (opzionale)';
+
+  @override
+  String get menuItemNotesHint => 'Es: senza cipolla, ben cotto...';
+
+  @override
+  String menuItemAddWithPrice(String price) => 'Aggiungi - € $price';
+
+  @override
+  String get allergenGluten => 'Glutine';
+
+  @override
+  String get allergenLactose => 'Lattosio';
+
+  @override
+  String get allergenEggs => 'Uova';
+
+  @override
+  String get allergenFish => 'Pesce';
+
+  @override
+  String get allergenCrustaceans => 'Crostacei';
+
+  @override
+  String get allergenPeanuts => 'Arachidi';
+
+  @override
+  String get allergenTreeNuts => 'Frutta a guscio';
+
+  @override
+  String get allergenSoy => 'Soia';
+
+  @override
+  String get allergenCelery => 'Sedano';
+
+  @override
+  String get allergenMustard => 'Senape';
+
+  @override
+  String get allergenSesame => 'Sesamo';
+
+  @override
+  String get allergenSulphites => 'Solfiti';
+
+  @override
+  String get allergenLupin => 'Lupini';
+
+  @override
+  String get allergenMolluscs => 'Molluschi';
+
+  @override
+  String get tagSpicy => 'Piccante';
+
+  @override
+  String get tagChefsChoice => 'Scelta dello Chef';
+
+  @override
+  String get favoritesRemove => 'Rimuovi dai preferiti';
+
+  @override
+  String get favoritesNoRestaurants => 'Nessun ristorante preferito';
+
+  @override
+  String get favoritesNoRestaurantsHint =>
+      'Tocca il cuore su un ristorante per\nsalvarlo qui';
+
+  @override
+  String get favoritesNoItems => 'Nessun piatto preferito';
+
+  @override
+  String get favoritesNoItemsHint => 'Tocca il cuore su un piatto per\nsalvarlo qui';
 }

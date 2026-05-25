@@ -879,5 +879,39 @@
   "analyticsPeriodWeek": "Settimana",
   "analyticsPeriodMonth": "Mese",
   "analyticsPeriodYear": "Anno",
-  "analyticsTotalRevenue": "Ricavi Totali"
+  "analyticsTotalRevenue": "Ricavi Totali",
+
+  "cartMinOrderMissing": "Mancano € {amount} per l'ordine minimo",
+  "@cartMinOrderMissing": { "placeholders": { "amount": { "type": "String" } } },
+
+  "menuItemAllergens": "Allergeni",
+  "menuItemNotesLabel": "Note (opzionale)",
+  "menuItemNotesHint": "Es: senza cipolla, ben cotto...",
+  "menuItemAddWithPrice": "Aggiungi - € {price}",
+  "@menuItemAddWithPrice": { "placeholders": { "price": { "type": "String" } } },
+
+  "allergenGluten": "Glutine",
+  "allergenLactose": "Lattosio",
+  "allergenEggs": "Uova",
+  "allergenFish": "Pesce",
+  "allergenCrustaceans": "Crostacei",
+  "allergenPeanuts": "Arachidi",
+  "allergenTreeNuts": "Frutta a guscio",
+  "allergenSoy": "Soia",
+  "allergenCelery": "Sedano",
+  "allergenMustard": "Senape",
+  "allergenSesame": "Sesamo",
+  "allergenSulphites": "Solfiti",
+  "allergenLupin": "Lupini",
+  "allergenMolluscs": "Molluschi",
+
+  "tagSpicy": "Piccante",
+  "tagChefsChoice": "Scelta dello Chef",
+
+  "favoritesRemove": "Rimuovi dai preferiti",
+  "favoritesNoRestaurants": "Nessun ristorante preferito",
+  "favoritesNoRestaurantsHint": "Tocca il cuore su un ristorante per\nsalvarlo qui",
+  "favoritesNoItems": "Nessun piatto preferito",
+  "favoritesNoItemsHint": "Tocca il cuore su un piatto per\nsalvarlo qui"
+}
 }

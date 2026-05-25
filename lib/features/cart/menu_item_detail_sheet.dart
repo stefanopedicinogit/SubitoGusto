@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/menu_item.dart';
+import '../../l10n/generated/app_localizations.dart';
 import 'cart_provider.dart';
 
 /// Bottom sheet showing menu item details
@@ -26,6 +27,7 @@ class _MenuItemDetailSheetState extends ConsumerState<MenuItemDetailSheet> {
   }
 
   void _addToCart() {
+    final l = AppLocalizations.of(context);
     ref.read(cartProvider.notifier).addItem(
           widget.item,
           quantity: _quantity,
@@ -34,7 +36,7 @@ class _MenuItemDetailSheetState extends ConsumerState<MenuItemDetailSheet> {
     Navigator.of(context).pop();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${widget.item.name} aggiunto al carrello'),
+        content: Text(l.menuItemAdded(widget.item.name)),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
       ),
@@ -43,6 +45,7 @@ class _MenuItemDetailSheetState extends ConsumerState<MenuItemDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final item = widget.item;
     final totalPrice = item.price * _quantity;
 
@@ -136,7 +139,7 @@ class _MenuItemDetailSheetState extends ConsumerState<MenuItemDetailSheet> {
                     if (item.allergens.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.lg),
                       Text(
-                        'Allergeni',
+                        l.menuItemAllergens,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: AppSpacing.sm),
@@ -145,7 +148,7 @@ class _MenuItemDetailSheetState extends ConsumerState<MenuItemDetailSheet> {
                         runSpacing: AppSpacing.sm,
                         children: item.allergens.map((allergen) {
                           return Chip(
-                            label: Text(_formatAllergen(allergen)),
+                            label: Text(_formatAllergen(allergen, l)),
                             backgroundColor: AppColors.warningLight,
                             labelStyle: const TextStyle(fontSize: 12),
                             visualDensity: VisualDensity.compact,
@@ -158,7 +161,7 @@ class _MenuItemDetailSheetState extends ConsumerState<MenuItemDetailSheet> {
                     Row(
                       children: [
                         if (item.preparationTime != null) ...[
-                          Icon(Icons.schedule,
+                          const Icon(Icons.schedule,
                               size: 18, color: AppColors.textSecondary),
                           const SizedBox(width: AppSpacing.xs),
                           Text(
@@ -170,7 +173,7 @@ class _MenuItemDetailSheetState extends ConsumerState<MenuItemDetailSheet> {
                           const SizedBox(width: AppSpacing.lg),
                         ],
                         if (item.calories != null) ...[
-                          Icon(Icons.local_fire_department,
+                          const Icon(Icons.local_fire_department,
                               size: 18, color: AppColors.textSecondary),
                           const SizedBox(width: AppSpacing.xs),
                           Text(
@@ -185,15 +188,15 @@ class _MenuItemDetailSheetState extends ConsumerState<MenuItemDetailSheet> {
                     // Notes
                     const SizedBox(height: AppSpacing.lg),
                     Text(
-                      'Note (opzionale)',
+                      l.menuItemNotesLabel,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     TextField(
                       controller: _notesController,
                       maxLines: 2,
-                      decoration: const InputDecoration(
-                        hintText: 'Es: senza cipolla, ben cotto...',
+                      decoration: InputDecoration(
+                        hintText: l.menuItemNotesHint,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xl),
@@ -258,7 +261,8 @@ class _MenuItemDetailSheetState extends ConsumerState<MenuItemDetailSheet> {
                             ),
                           ),
                           child: Text(
-                            'Aggiungi - € ${totalPrice.toStringAsFixed(2)}',
+                            l.menuItemAddWithPrice(
+                                totalPrice.toStringAsFixed(2)),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -290,36 +294,36 @@ class _MenuItemDetailSheetState extends ConsumerState<MenuItemDetailSheet> {
     );
   }
 
-  String _formatAllergen(String allergen) {
+  String _formatAllergen(String allergen, AppLocalizations l) {
     switch (allergen) {
       case 'glutine':
-        return 'Glutine';
+        return l.allergenGluten;
       case 'lattosio':
-        return 'Lattosio';
+        return l.allergenLactose;
       case 'uova':
-        return 'Uova';
+        return l.allergenEggs;
       case 'pesce':
-        return 'Pesce';
+        return l.allergenFish;
       case 'crostacei':
-        return 'Crostacei';
+        return l.allergenCrustaceans;
       case 'arachidi':
-        return 'Arachidi';
+        return l.allergenPeanuts;
       case 'frutta_secca':
-        return 'Frutta a guscio';
+        return l.allergenTreeNuts;
       case 'soia':
-        return 'Soia';
+        return l.allergenSoy;
       case 'sedano':
-        return 'Sedano';
+        return l.allergenCelery;
       case 'senape':
-        return 'Senape';
+        return l.allergenMustard;
       case 'sesamo':
-        return 'Sesamo';
+        return l.allergenSesame;
       case 'solfiti':
-        return 'Solfiti';
+        return l.allergenSulphites;
       case 'lupini':
-        return 'Lupini';
+        return l.allergenLupin;
       case 'molluschi':
-        return 'Molluschi';
+        return l.allergenMolluscs;
       default:
         return allergen;
     }
@@ -333,6 +337,7 @@ class _TagChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
@@ -348,7 +353,7 @@ class _TagChip extends StatelessWidget {
           Text(_getEmoji(), style: const TextStyle(fontSize: 14)),
           const SizedBox(width: AppSpacing.xs),
           Text(
-            _getLabel(),
+            _getLabel(l),
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: _getTextColor(),
                 ),
@@ -375,18 +380,18 @@ class _TagChip extends StatelessWidget {
     }
   }
 
-  String _getLabel() {
+  String _getLabel(AppLocalizations l) {
     switch (tag) {
       case 'vegetariano':
-        return 'Vegetariano';
+        return l.dietaryVegetarian;
       case 'vegano':
-        return 'Vegano';
+        return l.dietaryVegan;
       case 'gluten_free':
-        return 'Senza Glutine';
+        return l.dietaryGlutenFree;
       case 'piccante':
-        return 'Piccante';
+        return l.tagSpicy;
       case 'chefs_choice':
-        return 'Scelta dello Chef';
+        return l.tagChefsChoice;
       default:
         return tag;
     }
