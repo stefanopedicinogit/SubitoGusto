@@ -164,14 +164,13 @@ serve(async (req) => {
     // Generate order number
     const orderNumber = `D-${Date.now().toString(36).toUpperCase()}`
 
-    // Create PaymentIntent with destination charge.
-    // Restricted to Card + Klarna. PayPal pending Stripe Connect eligibility
-    // approval — see https://docs.stripe.com/payments/paypal#connect. Add
-    // 'paypal' back to the array once approved.
+    // Create PaymentIntent with destination charge. Card only.
+    // PayPal pending Stripe Connect eligibility approval — see
+    // https://docs.stripe.com/payments/paypal#connect.
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountInCents,
       currency: 'eur',
-      payment_method_types: ['card', 'klarna'],
+      payment_method_types: ['card'],
       application_fee_amount: platformFee,
       transfer_data: {
         destination: tenant.stripe_account_id,

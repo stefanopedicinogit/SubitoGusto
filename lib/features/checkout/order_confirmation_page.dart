@@ -204,6 +204,7 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, size: 20, color: AppColors.textSecondary),
         const SizedBox(width: AppSpacing.sm),
@@ -213,9 +214,13 @@ class _DetailRow extends StatelessWidget {
             style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           ),
         ),
-        Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        const SizedBox(width: AppSpacing.sm),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          ),
         ),
       ],
     );
