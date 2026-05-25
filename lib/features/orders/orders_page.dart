@@ -73,9 +73,27 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
               },
               tabs: [
                 Tab(text: l.ordersStaffFilterAll),
-                Tab(text: l.statusPending),
-                Tab(text: l.statusPreparing),
-                Tab(text: l.statusReadyForDelivery),
+                _buildStatusTab(
+                  label: l.statusPending,
+                  count: ordersAsync.valueOrNull
+                          ?.where((o) => o.status == 'pending').length ??
+                      0,
+                  context: context,
+                ),
+                _buildStatusTab(
+                  label: l.statusPreparing,
+                  count: ordersAsync.valueOrNull
+                          ?.where((o) => o.status == 'preparing').length ??
+                      0,
+                  context: context,
+                ),
+                _buildStatusTab(
+                  label: l.statusReadyForDelivery,
+                  count: ordersAsync.valueOrNull
+                          ?.where((o) => o.status == 'ready').length ??
+                      0,
+                  context: context,
+                ),
                 Tab(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -88,23 +106,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
                         data: (orders) {
                           final active = orders.where((o) => o.isActive).length;
                           if (active == 0) return const SizedBox.shrink();
-                          return Container(
-                            margin: const EdgeInsets.only(left: 6),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Text(
-                              '$active',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          );
+                          return _buildBadge(active, context);
                         },
                         loading: () => const SizedBox.shrink(),
                         error: (_, __) => const SizedBox.shrink(),
@@ -122,6 +124,43 @@ class _OrdersPageState extends ConsumerState<OrdersPage>
                 ? _buildDeliveryOrders(deliveryOrdersAsync)
                 : _buildDineInOrders(ordersAsync),
           ),
+        ],
+      ),
+    );
+  }
+
+  // ── Tab helpers ─────────────────────────────────────────────────────────────
+
+  Widget _buildBadge(int count, BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(left: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        '$count',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Tab _buildStatusTab({
+    required String label,
+    required int count,
+    required BuildContext context,
+  }) {
+    return Tab(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label),
+          if (count > 0) _buildBadge(count, context),
         ],
       ),
     );
