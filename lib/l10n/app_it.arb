@@ -52,6 +52,13 @@
   "consumerRegisterSuccess": "Registrazione completata! Effettua il login.",
   "consumerRegisterStaffPrompt": "Sei uno staff?",
   "consumerRegisterStaffLink": "Vai al login staff",
+  "consumerRegisterTagline": "Ordina a domicilio\ndai migliori ristoranti",
+  "consumerRegisterConfirmPasswordLabel": "Conferma password",
+  "consumerRegisterPasswordMismatch": "Le password non corrispondono",
+  "consumerRegisterOwnerPrompt": "Sei un ristoratore?",
+  "consumerRegisterOwnerLink": "Accedi qui",
+  "consumerRegisterErrorAlreadyRegistered": "Questa email è già registrata. Prova ad accedere.",
+  "consumerRegisterErrorGeneric": "Errore durante la registrazione. Riprova.",
 
   "validationRequired": "Campo obbligatorio",
   "validationEmail": "Email non valida",

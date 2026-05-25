@@ -60,7 +60,7 @@ class _ConsumerRegisterPageState extends ConsumerState<ConsumerRegisterPage> {
       );
 
       if (response.status != 200) {
-        final error = response.data?['error'] ?? 'Errore sconosciuto';
+        final error = response.data?['error'] ?? AppLocalizations.of(context).errorGeneric;
         throw Exception(error);
       }
 
@@ -80,9 +80,11 @@ class _ConsumerRegisterPageState extends ConsumerState<ConsumerRegisterPage> {
         context.go(path);
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = _translateError(e.toString());
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = _translateError(e.toString(), AppLocalizations.of(context));
+        });
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -90,18 +92,13 @@ class _ConsumerRegisterPageState extends ConsumerState<ConsumerRegisterPage> {
     }
   }
 
-  String _translateError(String error) {
-    if (error.contains('already registered') ||
-        error.contains('already exists')) {
-      return 'Questa email è già registrata. Prova ad accedere.';
+  String _translateError(String error, AppLocalizations l) {
+    if (error.contains('already registered') || error.contains('already exists')) {
+      return l.consumerRegisterErrorAlreadyRegistered;
     }
-    if (error.contains('password')) {
-      return 'La password deve avere almeno 6 caratteri.';
-    }
-    if (error.contains('email')) {
-      return 'Inserisci un\'email valida.';
-    }
-    return 'Errore durante la registrazione. Riprova.';
+    if (error.contains('password')) return l.errorAuthPasswordShort;
+    if (error.contains('email')) return l.validationEmail;
+    return l.consumerRegisterErrorGeneric;
   }
 
   @override
@@ -177,7 +174,7 @@ class _ConsumerRegisterPageState extends ConsumerState<ConsumerRegisterPage> {
       controller: _confirmPasswordController,
       obscureText: _obscureConfirm,
       decoration: InputDecoration(
-        labelText: 'Conferma password',
+        labelText: l.consumerRegisterConfirmPasswordLabel,
         prefixIcon: const Icon(Icons.lock_outlined),
         suffixIcon: IconButton(
           icon: Icon(
@@ -190,7 +187,7 @@ class _ConsumerRegisterPageState extends ConsumerState<ConsumerRegisterPage> {
       ),
       validator: (value) {
         if (value != _passwordController.text) {
-          return 'Le password non corrispondono';
+          return l.consumerRegisterPasswordMismatch;
         }
         return null;
       },
@@ -253,7 +250,7 @@ class _ConsumerRegisterPageState extends ConsumerState<ConsumerRegisterPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      'Ordina a domicilio\ndai migliori ristoranti',
+                      l.consumerRegisterTagline,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.8),
@@ -278,7 +275,7 @@ class _ConsumerRegisterPageState extends ConsumerState<ConsumerRegisterPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Crea il tuo account',
+                          l.consumerRegisterTitle,
                           style: Theme.of(context)
                               .textTheme
                               .headlineMedium
@@ -381,14 +378,14 @@ class _ConsumerRegisterPageState extends ConsumerState<ConsumerRegisterPage> {
                               TextSpan(
                                 children: [
                                   TextSpan(
-                                    text: 'Sei un ristoratore? ',
+                                    text: l.consumerRegisterOwnerPrompt,
                                     style: TextStyle(
                                       color: AppColors.textSecondary,
                                       fontSize: 13,
                                     ),
                                   ),
                                   TextSpan(
-                                    text: 'Accedi qui',
+                                    text: l.consumerRegisterOwnerLink,
                                     style: TextStyle(
                                       color: Theme.of(context).colorScheme.primary,
                                       fontSize: 13,

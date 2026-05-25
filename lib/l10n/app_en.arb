@@ -52,6 +52,13 @@
   "consumerRegisterSuccess": "Registration successful! Please sign in.",
   "consumerRegisterStaffPrompt": "Are you staff?",
   "consumerRegisterStaffLink": "Go to staff login",
+  "consumerRegisterTagline": "Order from the best restaurants,\ndelivered to your door",
+  "consumerRegisterConfirmPasswordLabel": "Confirm password",
+  "consumerRegisterPasswordMismatch": "Passwords don't match",
+  "consumerRegisterOwnerPrompt": "Are you a restaurant owner?",
+  "consumerRegisterOwnerLink": "Sign in here",
+  "consumerRegisterErrorAlreadyRegistered": "This email is already registered. Try signing in.",
+  "consumerRegisterErrorGeneric": "Registration error. Please try again.",
 
   "validationRequired": "Required field",
   "validationEmail": "Invalid email",

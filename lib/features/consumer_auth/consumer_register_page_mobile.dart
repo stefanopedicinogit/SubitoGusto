@@ -61,7 +61,7 @@ class _ConsumerRegisterPageMobileState
       );
 
       if (response.status != 200) {
-        final error = response.data?['error'] ?? 'Errore sconosciuto';
+        final error = response.data?['error'] ?? AppLocalizations.of(context).errorGeneric;
         throw Exception(error);
       }
 
@@ -81,9 +81,11 @@ class _ConsumerRegisterPageMobileState
         context.go(path);
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = _translateError(e.toString());
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = _translateError(e.toString(), AppLocalizations.of(context));
+        });
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -91,18 +93,13 @@ class _ConsumerRegisterPageMobileState
     }
   }
 
-  String _translateError(String error) {
-    if (error.contains('already registered') ||
-        error.contains('already exists')) {
-      return 'Questa email è già registrata. Prova ad accedere.';
+  String _translateError(String error, AppLocalizations l) {
+    if (error.contains('already registered') || error.contains('already exists')) {
+      return l.consumerRegisterErrorAlreadyRegistered;
     }
-    if (error.contains('password')) {
-      return 'La password deve avere almeno 6 caratteri.';
-    }
-    if (error.contains('email')) {
-      return 'Inserisci un\'email valida.';
-    }
-    return 'Errore durante la registrazione. Riprova.';
+    if (error.contains('password')) return l.errorAuthPasswordShort;
+    if (error.contains('email')) return l.validationEmail;
+    return l.consumerRegisterErrorGeneric;
   }
 
   @override
@@ -152,7 +149,8 @@ class _ConsumerRegisterPageMobileState
                     const SizedBox(height: AppSpacing.xs),
                     Center(
                       child: Text(
-                        'Ordina a domicilio dai migliori ristoranti',
+                        l.consumerRegisterTagline,
+                        textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -258,7 +256,7 @@ class _ConsumerRegisterPageMobileState
                       controller: _confirmPasswordController,
                       obscureText: _obscureConfirm,
                       decoration: InputDecoration(
-                        labelText: 'Conferma password',
+                        labelText: l.consumerRegisterConfirmPasswordLabel,
                         prefixIcon: const Icon(Icons.lock_outlined),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -273,7 +271,7 @@ class _ConsumerRegisterPageMobileState
                       ),
                       validator: (value) {
                         if (value != _passwordController.text) {
-                          return 'Le password non corrispondono';
+                          return l.consumerRegisterPasswordMismatch;
                         }
                         return null;
                       },
@@ -322,14 +320,14 @@ class _ConsumerRegisterPageMobileState
                           TextSpan(
                             children: [
                               TextSpan(
-                                text: 'Sei un ristoratore? ',
+                                text: l.consumerRegisterOwnerPrompt,
                                 style: TextStyle(
                                   color: AppColors.textSecondary,
                                   fontSize: 13,
                                 ),
                               ),
                               TextSpan(
-                                text: 'Accedi qui',
+                                text: l.consumerRegisterOwnerLink,
                                 style: TextStyle(
                                   color: Theme.of(
                                     context,

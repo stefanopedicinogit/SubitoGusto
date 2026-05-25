@@ -154,6 +154,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get consumerRegisterStaffLink => 'Go to staff login';
 
   @override
+  String get consumerRegisterTagline =>
+      'Order from the best restaurants,\ndelivered to your door';
+
+  @override
+  String get consumerRegisterConfirmPasswordLabel => 'Confirm password';
+
+  @override
+  String get consumerRegisterPasswordMismatch => 'Passwords don\'t match';
+
+  @override
+  String get consumerRegisterOwnerPrompt => 'Are you a restaurant owner?';
+
+  @override
+  String get consumerRegisterOwnerLink => 'Sign in here';
+
+  @override
+  String get consumerRegisterErrorAlreadyRegistered =>
+      'This email is already registered. Try signing in.';
+
+  @override
+  String get consumerRegisterErrorGeneric =>
+      'Registration error. Please try again.';
+
+  @override
   String get validationRequired => 'Required field';
 
   @override

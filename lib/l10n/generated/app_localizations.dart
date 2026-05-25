@@ -386,6 +386,48 @@ abstract class AppLocalizations {
   /// **'Vai al login staff'**
   String get consumerRegisterStaffLink;
 
+  /// No description provided for @consumerRegisterTagline.
+  ///
+  /// In it, this message translates to:
+  /// **'Ordina a domicilio\ndai migliori ristoranti'**
+  String get consumerRegisterTagline;
+
+  /// No description provided for @consumerRegisterConfirmPasswordLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'Conferma password'**
+  String get consumerRegisterConfirmPasswordLabel;
+
+  /// No description provided for @consumerRegisterPasswordMismatch.
+  ///
+  /// In it, this message translates to:
+  /// **'Le password non corrispondono'**
+  String get consumerRegisterPasswordMismatch;
+
+  /// No description provided for @consumerRegisterOwnerPrompt.
+  ///
+  /// In it, this message translates to:
+  /// **'Sei un ristoratore?'**
+  String get consumerRegisterOwnerPrompt;
+
+  /// No description provided for @consumerRegisterOwnerLink.
+  ///
+  /// In it, this message translates to:
+  /// **'Accedi qui'**
+  String get consumerRegisterOwnerLink;
+
+  /// No description provided for @consumerRegisterErrorAlreadyRegistered.
+  ///
+  /// In it, this message translates to:
+  /// **'Questa email è già registrata. Prova ad accedere.'**
+  String get consumerRegisterErrorAlreadyRegistered;
+
+  /// No description provided for @consumerRegisterErrorGeneric.
+  ///
+  /// In it, this message translates to:
+  /// **'Errore durante la registrazione. Riprova.'**
+  String get consumerRegisterErrorGeneric;
+
   /// No description provided for @validationRequired.
   ///
   /// In it, this message translates to:
