@@ -11,17 +11,19 @@ import '../../data/providers/consumer_providers.dart';
 import '../../data/providers/supabase_provider.dart';
 import '../../l10n/generated/app_localizations.dart';
 
-/// Provider to fetch a single delivery order by ID
+/// Realtime stream for a single delivery order — auto-updates when the
+/// Stripe webhook marks the order as paid/confirmed.
 final deliveryOrderByIdProvider =
-    FutureProvider.family<DeliveryOrder?, String>((ref, orderId) async {
+    StreamProvider.family<DeliveryOrder?, String>((ref, orderId) {
   final client = ref.watch(supabaseClientProvider);
-  final result = await client
+  return client
       .from('delivery_orders')
-      .select()
+      .stream(primaryKey: ['id'])
       .eq('id', orderId)
-      .maybeSingle();
-  if (result == null) return null;
-  return DeliveryOrder.fromJson(result);
+      .map((rows) {
+        if (rows.isEmpty) return null;
+        return DeliveryOrder.fromJson(rows.first);
+      });
 });
 
 /// Order confirmation page shown after successful payment

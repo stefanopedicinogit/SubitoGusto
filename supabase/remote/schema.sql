@@ -637,6 +637,7 @@ CREATE TABLE IF NOT EXISTS "public"."users" (
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone,
     "last_login_at" timestamp with time zone,
+    "fcm_token" "text",
     CONSTRAINT "users_role_check" CHECK (("role" = ANY (ARRAY['admin'::"text", 'manager'::"text", 'waiter'::"text", 'kitchen'::"text"])))
 );
 

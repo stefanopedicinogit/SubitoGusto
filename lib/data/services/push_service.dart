@@ -112,6 +112,52 @@ class PushService {
     _currentToken = null;
   }
 
+  /// Register a staff (tenant user) device for push notifications.
+  /// Saves the FCM token to `users.fcm_token` so the Stripe webhook can
+  /// notify all staff browsers when a new delivery order arrives.
+  Future<void> registerForStaff(String userId) async {
+    try {
+      final settings = await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      if (settings.authorizationStatus == AuthorizationStatus.denied) {
+        debugPrint('[PushService] staff push permission denied');
+        return;
+      }
+
+      final vapidKey = kIsWeb ? dotenv.env['COPPIA_CHIAVI_FIREBASE'] : null;
+      final token = await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
+      if (token == null) {
+        debugPrint('[PushService] staff push token was null');
+        return;
+      }
+
+      _currentToken = token;
+      await Supabase.instance.client
+          .from('users')
+          .update({'fcm_token': token})
+          .eq('id', userId);
+      // ignore: avoid_print
+      print('[PushService] staff fcm_token saved for $userId');
+    } catch (e) {
+      debugPrint('[PushService] registerForStaff error: $e');
+    }
+  }
+
+  /// Clear the FCM token from the staff user row on logout.
+  Future<void> unregisterStaff(String userId) async {
+    try {
+      await Supabase.instance.client
+          .from('users')
+          .update({'fcm_token': null})
+          .eq('id', userId);
+    } catch (e) {
+      debugPrint('[PushService] unregisterStaff error: $e');
+    }
+  }
+
   Future<void> _upsertToken(String userId, String token) async {
     final platform = _platformName();
     try {

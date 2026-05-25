@@ -207,16 +207,21 @@ class _PushHandlerState extends ConsumerState<PushHandler> {
   void _handleAuth(AsyncValue<AuthState> snapshot) {
     final auth = snapshot.valueOrNull;
     debugPrint(
-      'PushHandler auth tick: authed=${auth?.isAuthenticated} consumer=${auth?.isConsumer} uid=${auth?.user?.id}',
+      'PushHandler auth tick: authed=${auth?.isAuthenticated} consumer=${auth?.isConsumer} staff=${auth?.isStaff} uid=${auth?.user?.id}',
     );
     if (auth == null) return;
-    // Register only when logged in AS a consumer. Any other state (logged out,
-    // logged in as staff) must remove any prior token from this device, so a
-    // staff member who previously tested the consumer flow doesn't keep
-    // receiving consumer push notifications.
+
     if (auth.isAuthenticated && auth.isConsumer && auth.user != null) {
+      // Consumer login — register device in push_tokens.
+      // Also clear any stale staff token from this device.
       PushService.instance.registerForUser(auth.user!.id);
+    } else if (auth.isAuthenticated && auth.isStaff && auth.user != null) {
+      // Staff login — remove any consumer token from this device, then
+      // register this browser in users.fcm_token for new-order notifications.
+      PushService.instance.unregister();
+      PushService.instance.registerForStaff(auth.user!.id);
     } else {
+      // Logged out — clean up both token stores.
       PushService.instance.unregister();
     }
   }
