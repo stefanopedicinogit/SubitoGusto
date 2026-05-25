@@ -110,7 +110,7 @@ serve(async (req) => {
 
     if (!signature) throw new Error('Missing stripe-signature header')
 
-    const event = stripe.webhooks.constructEvent(body, signature, stripeWebhookSecret)
+    const event = await stripe.webhooks.constructEventAsync(body, signature, stripeWebhookSecret)
 
     console.log('Webhook event:', event.type, event.id)
 
@@ -145,14 +145,20 @@ serve(async (req) => {
         const total = Number(order.total).toFixed(2)
 
         // Fetch FCM tokens for all staff of this tenant
-        const { data: staffRows } = await supabase
+        const { data: staffRows, error: staffErr } = await supabase
           .from('users')
           .select('fcm_token')
           .eq('tenant_id', tenantId)
           .not('fcm_token', 'is', null)
 
+        if (staffErr) {
+          console.error('Failed to fetch staff FCM tokens:', staffErr.message, staffErr.code)
+          // Likely cause: migration 013 not run yet (fcm_token column missing)
+          break
+        }
+
         if (!staffRows?.length) {
-          console.log('No staff FCM tokens for tenant', tenantId)
+          console.log('No staff FCM tokens for tenant', tenantId, '— staff must log in once to register')
           break
         }
 

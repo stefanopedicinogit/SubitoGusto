@@ -325,12 +325,18 @@ final usersListProvider = FutureProvider<List<AppUser>>((ref) async {
 
 /// Tracks known order IDs to detect new orders
 final _knownOrderIdsProvider = StateProvider<Set<String>>((ref) {
-  // Reset known IDs when auth changes
   ref.watch(supabaseAuthProvider);
   return {};
 });
 
-/// Order notification listener - watches for new orders and triggers notifications
+/// Separate known-ID set for delivery orders so the two streams don't collide.
+final _knownDeliveryOrderIdsProvider = StateProvider<Set<String>>((ref) {
+  ref.watch(supabaseAuthProvider);
+  return {};
+});
+
+/// Order notification listener - watches for new dine-in AND delivery orders
+/// and triggers the in-app notification bell.
 final orderNotificationListenerProvider = Provider<void>((ref) {
   final settings = ref.watch(settingsProvider);
   final authState = ref.watch(supabaseAuthProvider);
@@ -340,24 +346,23 @@ final orderNotificationListenerProvider = Provider<void>((ref) {
     final prevUser = previous?.valueOrNull?.user?.id;
     final nextUser = next.valueOrNull?.user?.id;
     if (prevUser != nextUser) {
-      // User changed - clear notifications and known IDs
       ref.read(notificationsProvider.notifier).clearAll();
       ref.read(_knownOrderIdsProvider.notifier).state = {};
+      ref.read(_knownDeliveryOrderIdsProvider.notifier).state = {};
     }
   });
 
   if (!settings.orderNotifications) return;
   if (authState.valueOrNull?.isAuthenticated != true) return;
 
+  // ── Dine-in orders ────────────────────────────────────────────────────────
   ref.listen<AsyncValue<List<Order>>>(ordersStreamProvider, (previous, next) {
     next.whenData((orders) async {
       final knownIds = ref.read(_knownOrderIdsProvider);
       final currentIds = orders.map((o) => o.id).toSet();
 
-      // Find new pending orders
       for (final order in orders) {
         if (!knownIds.contains(order.id) && order.status == 'pending') {
-          // This is a new order - trigger notification
           ref.read(notificationsProvider.notifier).addNotification(
             title: 'Nuovo Ordine',
             message: 'Ordine #${order.orderNumber} - ${order.total.toStringAsFixed(2)}€',
@@ -365,7 +370,6 @@ final orderNotificationListenerProvider = Provider<void>((ref) {
             orderId: order.id,
           );
 
-          // Auto-confirm order if enabled
           if (settings.autoConfirmOrders) {
             try {
               final orderRepo = ref.read(orderRepositoryProvider);
@@ -373,15 +377,37 @@ final orderNotificationListenerProvider = Provider<void>((ref) {
                 order.id,
                 order.copyWith(status: 'confirmed'),
               );
-            } catch (e) {
-              // Silently fail - order will remain pending
-            }
+            } catch (_) {}
           }
         }
       }
 
-      // Update known IDs
       ref.read(_knownOrderIdsProvider.notifier).state = currentIds;
     });
   });
+
+  // ── Delivery orders ───────────────────────────────────────────────────────
+  ref.listen<AsyncValue<List<DeliveryOrder>>>(
+    staffDeliveryOrdersStreamProvider,
+    (previous, next) {
+      next.whenData((orders) {
+        final knownIds = ref.read(_knownDeliveryOrderIdsProvider);
+        final currentIds = orders.map((o) => o.id).toSet();
+
+        for (final order in orders) {
+          if (!knownIds.contains(order.id) && order.status == 'pending') {
+            ref.read(notificationsProvider.notifier).addNotification(
+              title: 'Nuovo Ordine Delivery',
+              message:
+                  '#${order.orderNumber} · ${order.deliveryCity} · €${order.total.toStringAsFixed(2)}',
+              type: 'order',
+              orderId: order.id,
+            );
+          }
+        }
+
+        ref.read(_knownDeliveryOrderIdsProvider.notifier).state = currentIds;
+      });
+    },
+  );
 });
